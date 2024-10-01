@@ -7,8 +7,9 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/modules/user/entities/user.entity';
 import { UserService } from 'src/modules/user/user.service';
 import nacl from 'tweetnacl';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import { ConfirmInfo, CreateAuthDto, UserInfo } from './dto/create-auth.dto';
 import { ConfigService } from '@nestjs/config';
+import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -18,23 +19,18 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async validateUser(walletAddress: string): Promise<any> {
-    // const isValidKey = nacl.sign.detached.verify(
-    //   loginOutput.signedMessage,
-    //   loginOutput.signature,
-    //   loginOutput.account.publicKey,
-    // );
-    // const user = await this.userService.findOne(loginOutput.account.publicKey);
-    const user = await this.userService.findOne(walletAddress);
-    // if (!user || !isValidKey) return null;
-    if (!user) return null;
-    return user;
+  async handleValidate(userInfo: UserInfo) {
+
   }
 
-  async login(user: User) {
+  async login(walletAddress: string) {
+    const user = await this.userService.getUser(walletAddress);
+
+    if (!user) throw new UnauthorizedException("Can't find wallet address");
+
     const accessPayload = {
       walletAddress: user.walletAddress,
-      isAdmin: user.isAdmin,
+      role: user.role,
     };
 
     const refreshPayload = {
@@ -50,7 +46,5 @@ export class AuthService {
     };
   }
 
-  handleRegister = async (registerDto: CreateAuthDto) => {
-    return await this.userService.create(registerDto);
-  };
+  async handleConfirm(confirmInfo: ConfirmInfo) {}
 }

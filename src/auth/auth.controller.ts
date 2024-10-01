@@ -1,20 +1,27 @@
-import { Body, Controller, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
+import { ConfirmInfo, CreateAuthDto, UserInfo } from './dto/create-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
+import { Request } from 'express';
+import { userInfo } from 'os';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('login')
-  @UseGuards(AuthGuard('local'))
-  handleLogin(@Request() req) {
-    return this.authService.login(req.user);
+  @Post()
+  handleValidate(@Body() userInfo: UserInfo) {
+    return this.authService.handleValidate(userInfo);
   }
 
-  @Post('register')
-  register(@Body() registerDto: CreateAuthDto) {
-    return this.authService.handleRegister(registerDto);
+  @Post('login')
+  handleLogin(@Req() req) {
+    return this.authService.login(req);
+  }
+
+  @Post('confirm')
+  handleConfirm(@Body() confirmInfo: ConfirmInfo) {
+    return this.authService.handleValidate(confirmInfo);
   }
 }

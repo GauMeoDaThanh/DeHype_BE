@@ -4,12 +4,16 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
+import { PendingUser } from './entities/pendingUser.entity';
+import { classToPlain, instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(PendingUser)
+    private pendingUserRepository: Repository<PendingUser>,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
@@ -20,8 +24,24 @@ export class UserService {
     return false;
   };
 
+  getUser = async (walletAddress: string) => {
+    const user = await this.usersRepository.findOne({
+      where: { walletAddress: walletAddress || IsNull() },
+    });
+
+    return user;
+  };
+
+  getPendingUser = async (walletAddress: string) => {
+    const pendingUser = await this.pendingUserRepository.findOne({
+      where: { walletAddress: walletAddress || IsNull() },
+    });
+
+    return pendingUser;
+  };
+
   async create(createUserDto: CreateUserDto) {
-    const { walletAddress } = createUserDto;
+    const { walletAddress, role } = createUserDto;
 
     const isExist = await this.isWalletExist(walletAddress);
     if (isExist === true) {
@@ -32,6 +52,7 @@ export class UserService {
 
     const user = this.usersRepository.create({
       walletAddress: walletAddress,
+      role: role,
     });
     await this.usersRepository.save(user);
 
@@ -45,12 +66,10 @@ export class UserService {
   }
 
   async findOne(walletAddress: string) {
-    const user = await this.usersRepository.findOne({
-      where: { walletAddress: walletAddress || IsNull() },
-    });
+    const user = this.getUser(walletAddress);
 
     if (user === null) throw new BadRequestException('Invalid user address');
-    return user;
+    return instanceToPlain(user);
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
