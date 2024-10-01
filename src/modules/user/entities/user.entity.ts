@@ -6,8 +6,9 @@ export class User {
   @PrimaryColumn()
   walletAddress: string;
 
-  @Column({ default: false })
-  isAdmin: boolean;
+  @Exclude()
+  @Column({ default: 'user' })
+  role: string;
 
   @Column()
   username: string;
