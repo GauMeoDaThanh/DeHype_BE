@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
@@ -17,10 +17,10 @@ export class UserService {
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
-    const user = await this.usersRepository.exists({
+    const isExist = await this.usersRepository.exists({
       where: { walletAddress: walletAddress },
     });
-    if (user) return true;
+    if (isExist) return true;
     return false;
   };
 
@@ -40,7 +40,18 @@ export class UserService {
     return pendingUser;
   };
 
-  async create(createUserDto: CreateUserDto) {
+  async createPendingUser(createPendingUserDto: CreatePendingUserDto) {
+    const { wallet, isLedger, nonce } = createPendingUserDto;
+
+    const pendingUser = this.pendingUserRepository.create({
+      walletAddress: wallet,
+      isLedger: isLedger,
+      nonce: nonce,
+    });
+    return await this.pendingUserRepository.save(pendingUser);
+  }
+
+  async createUser(createUserDto: CreateUserDto) {
     const { walletAddress, role } = createUserDto;
 
     const isExist = await this.isWalletExist(walletAddress);
@@ -57,8 +68,21 @@ export class UserService {
     await this.usersRepository.save(user);
 
     return {
+      username: user.username,
       walletAddress: user.walletAddress,
     };
+  }
+
+  async removePendingUserByNonce(nonce: string) {
+    const foundNonce = await this.pendingUserRepository.findOne({
+      where: { nonce },
+    });
+
+    if (foundNonce) {
+      await this.pendingUserRepository.remove(foundNonce);
+      return foundNonce;
+    }
+    return null;
   }
 
   findAll() {

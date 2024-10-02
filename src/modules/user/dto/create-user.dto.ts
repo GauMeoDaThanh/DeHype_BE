@@ -6,11 +6,11 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsIn(['user', 'admin'], { message: 'role must be either user or admin' })
-  role: string;
+  role?: string;
 }
 
-export interface CreatePendingUser {
-  walletAddress: string;
-  isLedger: string;
+export interface CreatePendingUserDto {
+  wallet: string;
+  isLedger: boolean;
   nonce: string;
 }

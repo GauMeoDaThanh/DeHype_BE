@@ -23,3 +23,8 @@ export class ConfirmInfo {
   @IsNotEmpty()
   nonce: string;
 }
+
+export class LoginDto {
+  @IsNotEmpty({ message: 'walletAddress is required' })
+  walletAddress: string;
+}
