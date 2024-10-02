@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -15,10 +16,8 @@ import {
   LoginDto,
   UserInfo,
 } from './dto/create-auth.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
-import { Request } from 'express';
-import { userInfo } from 'os';
+import { JwtAuthGuard } from './passport/jwt-auth.guard';
+import { RefreshAuthGuard } from './passport/refresh-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -39,5 +38,18 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   handleConfirm(@Body() confirmInfo: ConfirmInfo) {
     return this.authService.handleConfirm(confirmInfo);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('jwt')
+  testingJWT(@Req() req) {
+    return req.user;
+  }
+
+  @UseGuards(RefreshAuthGuard)
+  @Get('refresh')
+  @HttpCode(HttpStatus.CREATED)
+  handleRefreshToken(@Req() req) {
+    return this.authService.refreshAccessToken(req.user);
   }
 }

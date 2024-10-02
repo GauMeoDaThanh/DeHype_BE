@@ -56,7 +56,7 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('Wallet not found');
 
     const accessPayload = {
-      name: user.username,
+      username: user.username,
       walletAddress: user.walletAddress,
       role: user.role,
     };
@@ -115,5 +115,22 @@ export class AuthService {
     }
 
     return await this.userService.createUser({ walletAddress: wallet });
+  }
+
+  async refreshAccessToken(req: any) {
+    const { walletAddress } = req;
+    const user = await this.userService.getUser(walletAddress);
+
+    if (!user) throw new UnauthorizedException('Wallet not found');
+
+    const accessPayload = {
+      username: user.username,
+      walletAddress: user.walletAddress,
+      role: user.role,
+    };
+
+    return {
+      access_token: this.jwtService.sign(accessPayload),
+    };
   }
 }
