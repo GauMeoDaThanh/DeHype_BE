@@ -52,7 +52,6 @@ export class AuthService {
     const { walletAddress } = loginDto;
 
     const user = await this.userService.getUser(walletAddress);
-    console.log(user);
     if (!user) throw new UnauthorizedException('Wallet not found');
 
     const accessPayload = {
