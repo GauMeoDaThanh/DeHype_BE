@@ -57,6 +57,7 @@ export class AuthController {
     return req.user;
   }
 
+  @Public()
   @UseGuards(RefreshAuthGuard)
   @Get('refresh')
   @HttpCode(HttpStatus.CREATED)
