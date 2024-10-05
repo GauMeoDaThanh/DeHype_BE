@@ -8,6 +8,7 @@ import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
+import { MarketService } from './market/market.service';
 
 @Module({
   imports: [
@@ -17,13 +18,11 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: parseInt(configService.get<string>('DATABASE_PORT')),
-        username: configService.get<string>('DATABASE_USER'),
-        password: configService.get<string>('DATABASE_PASS'),
+        url: configService.get<string>('DATABASE_URL'),
         database: 'dehype',
         autoLoadEntities: true,
         synchronize: true,
+        ssl: { rejectUnauthorized: false }, // Conditional SSL
       }),
       inject: [ConfigService],
     }),
@@ -37,6 +36,7 @@ import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    MarketService,
   ],
 })
-export class AppModule {}
+export class AppModule { }

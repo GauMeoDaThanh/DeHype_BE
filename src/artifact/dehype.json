@@ -1,0 +1,148 @@
+{
+  "version": "0.1.0",
+  "name": "dehype",
+  "instructions": [
+    {
+      "name": "createMarket",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "user",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "eventName",
+          "type": "string"
+        },
+        {
+          "name": "outcomeOptions",
+          "type": {
+            "vec": "string"
+          }
+        }
+      ]
+    },
+    {
+      "name": "resolveMarket",
+      "accounts": [
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "user",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "winningOutcome",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Market",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "eventName",
+            "type": "string"
+          },
+          {
+            "name": "outcomeTokens",
+            "type": {
+              "vec": {
+                "defined": "OutcomeToken"
+              }
+            }
+          },
+          {
+            "name": "isActive",
+            "type": "bool"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "OutcomeState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pending"
+          },
+          {
+            "name": "Winning"
+          },
+          {
+            "name": "Losing"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OutcomeToken",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "liquidity",
+            "type": "u64"
+          },
+          {
+            "name": "outcomeState",
+            "type": {
+              "defined": "OutcomeState"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "EventNameTooLong",
+      "msg": "The event name is too long."
+    },
+    {
+      "code": 6001,
+      "name": "TooManyOutcomeOptions",
+      "msg": "Too many outcome options."
+    },
+    {
+      "code": 6002,
+      "name": "OutcomeOptionNameTooLong",
+      "msg": "An outcome option name is too long."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidOutcome",
+      "msg": "Invalid outcome."
+    }
+  ]
+}
