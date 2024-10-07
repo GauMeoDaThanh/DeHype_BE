@@ -42,7 +42,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "tweetnacl": "^1.0.3",
-    "typeorm": "^0.3.20"
+    "typeorm": "^0.3.20",
+    "web3.storage": "^4.5.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
