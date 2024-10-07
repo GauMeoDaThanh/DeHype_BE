@@ -8,7 +8,8 @@ import { UserModule } from './modules/user/user.module';
 import { User } from './modules/user/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
-import { MarketService } from './market/market.service';
+import { MarketModule } from './modules/market/market.module';
+import { MetadataModule } from './modules/metadata/metadata.module';
 
 @Module({
   imports: [
@@ -28,6 +29,8 @@ import { MarketService } from './market/market.service';
     }),
     AuthModule,
     UserModule,
+    MarketModule,
+    MetadataModule,
   ],
   controllers: [AppController],
   providers: [
@@ -36,7 +39,6 @@ import { MarketService } from './market/market.service';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
-    MarketService,
   ],
 })
 export class AppModule { }
