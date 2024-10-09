@@ -6,6 +6,8 @@ import { User } from './entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
 import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { extractPublicId } from 'cloudinary-build-url';
 
 @Injectable()
 export class UserService {
@@ -14,6 +16,7 @@ export class UserService {
     private usersRepository: Repository<User>,
     @InjectRepository(PendingUser)
     private pendingUserRepository: Repository<PendingUser>,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
@@ -85,12 +88,29 @@ export class UserService {
     return null;
   }
 
+  async uploadAvatar(file: Express.Multer.File, user: any) {
+    const { walletAddress } = user;
+    const userInfo = await this.getUser(walletAddress);
+    const publicId = extractPublicId(userInfo.avatarUrl);
+
+    if (publicId !== 'User/default') {
+      this.cloudinaryService.removeFile(publicId);
+    }
+
+    const folder = 'user';
+    const uploadResult = await this.cloudinaryService.uploadFile(file, folder);
+
+    this.usersRepository.update(walletAddress, { avatarUrl: uploadResult.url });
+
+    return uploadResult;
+  }
+
   findAll() {
     return `This action returns all user`;
   }
 
   async findOne(walletAddress: string) {
-    const user = this.getUser(walletAddress);
+    const user = await this.getUser(walletAddress);
 
     if (user === null) throw new BadRequestException('Invalid user address');
     return instanceToPlain(user);

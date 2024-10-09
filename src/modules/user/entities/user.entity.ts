@@ -13,6 +13,12 @@ export class User {
   @Column()
   username: string;
 
+  @Column({
+    default:
+      'https://res.cloudinary.com/diwacy6yr/image/upload/v1728441530/User/default.png',
+  })
+  avatarUrl: string;
+
   @Column({ default: 0 })
   joinedMarkets: number;
 
