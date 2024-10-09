@@ -15,6 +15,7 @@ import { Response } from 'express';
 import { pseudoRandomBytes } from 'crypto';
 import base58 from 'bs58';
 import { PublicKey, Transaction } from '@solana/web3.js';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class AuthService {
@@ -27,8 +28,9 @@ export class AuthService {
   async handleValidate(userInfo: UserInfo, res: Response) {
     try {
       const wallet = userInfo.wallet;
-      const userData = await this.userService.findOne(wallet);
-      if (userData) return res.status(HttpStatus.OK).send(userData);
+      const userData = await this.userService.getUser(wallet);
+      if (userData)
+        return res.status(HttpStatus.OK).send(instanceToPlain(userData));
 
       const pendingUser = await this.userService.getPendingUser(wallet);
       if (!pendingUser) {

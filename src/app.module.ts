@@ -10,6 +10,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MarketModule } from './modules/market/market.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -20,10 +21,9 @@ import { MetadataModule } from './modules/metadata/metadata.module';
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
-        database: 'dehype',
         autoLoadEntities: true,
         synchronize: true,
-        ssl: { rejectUnauthorized: false }, // Conditional SSL
+        // ssl: { rejectUnauthorized: false }, // Conditional SSL
       }),
       inject: [ConfigService],
     }),
@@ -31,6 +31,7 @@ import { MetadataModule } from './modules/metadata/metadata.module';
     UserModule,
     MarketModule,
     MetadataModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [
@@ -41,4 +42,4 @@ import { MetadataModule } from './modules/metadata/metadata.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
