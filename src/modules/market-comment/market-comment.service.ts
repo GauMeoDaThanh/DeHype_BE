@@ -137,13 +137,16 @@ export class MarketCommentService {
     const { filter, sort } = aqp(query);
     let { pageSize, current, ...restFilter } = filter;
 
+    if (!pageSize) pageSize = 10;
+    if (!current) current = 1;
+
     const [results, totalItems] =
       await this.marketCommentRepository.findAndCount({
         relations: ['replies', 'user', 'replies.user'],
         where: { parentComment: IsNull() },
         order: sort,
-        take: pageSize || 10,
-        skip: ((current || 1) - 1) * (pageSize || 10),
+        take: pageSize,
+        skip: (current - 1) * pageSize,
       });
 
     const customizedResults = results.map((result) => ({
@@ -168,10 +171,11 @@ export class MarketCommentService {
     }));
 
     return {
-      comment: customizedResults,
+      comments: customizedResults,
       meta: {
         current: current,
         pageSize: pageSize,
+        pages: Math.ceil(totalItems / pageSize),
         total: totalItems,
       },
     };
