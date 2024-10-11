@@ -1,5 +1,12 @@
 import { Exclude } from 'class-transformer';
-import { BeforeInsert, Column, Entity, PrimaryColumn } from 'typeorm';
+import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -32,4 +39,7 @@ export class User {
   setUsername() {
     this.username = this.walletAddress;
   }
+
+  @OneToMany(() => MarketComment, (marketComment) => marketComment.user)
+  marketComments: MarketComment[];
 }

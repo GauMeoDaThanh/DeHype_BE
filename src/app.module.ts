@@ -5,12 +5,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { User } from './modules/user/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MarketModule } from './modules/market/market.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { MarketCommentModule } from './modules/market-comment/market-comment.module';
 
 @Module({
   imports: [
@@ -32,6 +32,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
     MarketModule,
     MetadataModule,
     CloudinaryModule,
+    MarketCommentModule,
   ],
   controllers: [AppController],
   providers: [

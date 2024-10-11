@@ -1,6 +1,6 @@
 {
-  "name": "DeHype_BE",
-  "version": "0.0.1",
+  "name": "dehype_be",
+  "version": "1.0.0",
   "description": "",
   "author": "",
   "private": true,
@@ -32,6 +32,7 @@
     "@nestjs/typeorm": "^10.0.2",
     "@project-serum/anchor": "^0.26.0",
     "@solana/web3.js": "^1.95.3",
+    "api-query-params": "^5.4.0",
     "bs58": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
