@@ -133,7 +133,7 @@ export class MarketCommentService {
     return await this.marketCommentRepository.delete(params.commentId);
   }
 
-  async findAll(query: string, marketId: string) {
+  async findAllMarketComments(query: string, marketId: string) {
     const { filter, sort } = aqp(query);
     let { pageSize, current, ...restFilter } = filter;
 
@@ -160,12 +160,14 @@ export class MarketCommentService {
         createdAt: reply.createdAt,
         updatedAt: reply.updatedAt,
         user: {
+          username: reply.user.username,
           walletAddress: reply.user.walletAddress,
           avatarUrl: reply.user.avatarUrl,
         },
       })),
       user: {
         walletAddress: result.user.walletAddress,
+        username: result.user.username,
         avatarUrl: result.user.avatarUrl,
       },
     }));
