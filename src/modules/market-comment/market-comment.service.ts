@@ -133,7 +133,7 @@ export class MarketCommentService {
     return await this.marketCommentRepository.delete(params.commentId);
   }
 
-  async findAll(query: string) {
+  async findAll(query: string, marketId: string) {
     const { filter, sort } = aqp(query);
     let { pageSize, current, ...restFilter } = filter;
 
@@ -143,7 +143,7 @@ export class MarketCommentService {
     const [results, totalItems] =
       await this.marketCommentRepository.findAndCount({
         relations: ['replies', 'user', 'replies.user'],
-        where: { parentComment: IsNull() },
+        where: { parentComment: IsNull(), marketId: marketId },
         order: sort,
         take: pageSize,
         skip: (current - 1) * pageSize,

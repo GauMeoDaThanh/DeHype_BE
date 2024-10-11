@@ -75,7 +75,8 @@ export class MarketCommentController {
   @Get(':marketId/comments')
   findAll(
     @Query() query: string,
+    @Param("marketId") marketId: string
   ) {
-    return this.marketCommentService.findAll(query);
+    return this.marketCommentService.findAll(query, marketId);
   }
 }
