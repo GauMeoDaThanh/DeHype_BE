@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpStatus,
   Injectable,
   InternalServerErrorException,
@@ -19,6 +20,10 @@ import { MarketComment } from './entities/market-comment.entity';
 import { IsNull, Repository } from 'typeorm';
 import { Role } from 'src/constants/role.enum';
 import aqp from 'api-query-params';
+import {
+  GetMarketCommentsResponse,
+  MetaDto,
+} from './dto/read-market-comment.dto';
 
 @Injectable()
 export class MarketCommentService {
@@ -33,11 +38,14 @@ export class MarketCommentService {
       relations: ['user'],
     });
 
-    if (!comment)
-      throw new NotFoundException(`comment with ID ${commentId} not found`);
+    if (!comment) {
+      throw new NotFoundException(`Comment with ID ${commentId} not found.`);
+    }
 
-    if (user.role === Role.ADMIN) return true;
-    else return comment.user.walletAddress === user.walletAddress;
+    return (
+      user.role === Role.ADMIN ||
+      comment.user.walletAddress === user.walletAddress
+    );
   }
 
   async createComment(
@@ -96,7 +104,7 @@ export class MarketCommentService {
     );
 
     if (!isCommentOwnerOrAdmin)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to update this comment',
       );
 
@@ -112,7 +120,7 @@ export class MarketCommentService {
     );
 
     if (!isCommentOwnerOrAdmin)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to delete this comment',
       );
 
@@ -143,7 +151,7 @@ export class MarketCommentService {
     const [results, totalItems] =
       await this.marketCommentRepository.findAndCount({
         relations: ['replies', 'user', 'replies.user'],
-        where: { parentComment: IsNull(), marketId: marketId },
+        where: { parentComment: IsNull(), marketId: marketId, ...restFilter },
         order: sort,
         take: pageSize,
         skip: (current - 1) * pageSize,
@@ -172,15 +180,19 @@ export class MarketCommentService {
       },
     }));
 
-    return {
-      comments: customizedResults,
-      meta: {
-        current: current,
-        pageSize: pageSize,
-        pages: Math.ceil(totalItems / pageSize),
-        total: totalItems,
-      },
+    const meta: MetaDto = {
+      current: current,
+      pageSize: pageSize,
+      pages: Math.ceil(totalItems / pageSize),
+      total: totalItems,
     };
+
+    const response: GetMarketCommentsResponse = {
+      comments: customizedResults,
+      meta: meta,
+    };
+
+    return response;
   }
   catch(error) {
     throw new InternalServerErrorException('Something happen');
