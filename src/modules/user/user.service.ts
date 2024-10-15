@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
@@ -120,8 +121,15 @@ export class UserService {
     return instanceToPlain(user);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(walletAddress: string, updateUserDto: UpdateUserDto) {
+    try {
+      const { username } = updateUserDto;
+      return await this.usersRepository.update(walletAddress, {
+        username: username,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Something went wrong');
+    }
   }
 
   remove(id: number) {

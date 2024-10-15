@@ -21,6 +21,8 @@ import {
   ApiBody,
   ApiConsumes,
   ApiExcludeEndpoint,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -97,12 +99,16 @@ export class UserController {
     return this.userService.uploadAvatar(file, req.user);
   }
 
-  @ApiExcludeEndpoint()
   @ApiOperation({ summary: 'update user information' })
   @ApiParam({ name: 'id', type: String, description: 'user wallet address' })
+  @ApiOkResponse({ description: 'Successful operation' })
+  @ApiInternalServerErrorResponse({ description: 'Server error' })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
+  update(
+    @Param('id') walletAddress: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.userService.update(walletAddress, updateUserDto);
   }
 
   @ApiExcludeEndpoint()
