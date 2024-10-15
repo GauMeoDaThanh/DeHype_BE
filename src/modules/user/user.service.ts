@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -112,7 +116,7 @@ export class UserService {
   async findOne(walletAddress: string) {
     const user = await this.getUser(walletAddress);
 
-    if (user === null) throw new BadRequestException('Invalid user address');
+    if (user === null) throw new NotFoundException('Invalid user address');
     return instanceToPlain(user);
   }
 
