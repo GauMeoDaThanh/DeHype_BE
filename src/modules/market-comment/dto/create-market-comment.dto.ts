@@ -1,6 +1,8 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateMarketCommentDto {
+  @ApiProperty({ example: 'comment 1' })
   @IsNotEmpty()
   content: string;
 }
