@@ -51,11 +51,11 @@ jobs:
           ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
 
           # Transfer build files to EC2 instance
-          scp -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ubuntu/${{ vars.app_name }}
+          scp -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
 
           # SSH into EC2 and install production dependencies & restart the app
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
-            cd /home/ubuntu/${{ vars.app_name }}
+            cd /home/ec2-user/${{ vars.app_name }}
             yarn install --production
             pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
           EOF
