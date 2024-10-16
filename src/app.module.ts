@@ -11,20 +11,18 @@ import { MarketModule } from './modules/market/market.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { MarketCommentModule } from './modules/market-comment/market-comment.module';
+import { BlogModule } from './modules/blog/blog.module';
+import typeorm from './config/typeorm';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [typeorm],
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        autoLoadEntities: true,
-        synchronize: true,
-        // ssl: { rejectUnauthorized: false }, // Conditional SSL
-      }),
+      useFactory: async (configService: ConfigService) =>
+        configService.get('typeorm'),
       inject: [ConfigService],
     }),
     AuthModule,
@@ -33,6 +31,7 @@ import { MarketCommentModule } from './modules/market-comment/market-comment.mod
     MetadataModule,
     CloudinaryModule,
     MarketCommentModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [

@@ -38,4 +38,7 @@ export class MarketComment {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  point: number;
 }
