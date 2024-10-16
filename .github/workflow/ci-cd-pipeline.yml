@@ -48,14 +48,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
 
           # Transfer build files to EC2 instance
-          scp -i ~/.ssh/id_rsa -r dist/ ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }}:/home/ubuntu/${{ secrets.APP_NAME }}
+          scp -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ubuntu/${{ vars.app_name }}
 
           # SSH into EC2 and install production dependencies & restart the app
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_IP }} << 'EOF'
-            cd /home/ubuntu/${{ secrets.APP_NAME }}
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
+            cd /home/ubuntu/${{ vars.app_name }}
             yarn install --production
-            pm2 restart all || pm2 start dist/main.js --name ${{ secrets.APP_NAME }}
+            pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
           EOF
