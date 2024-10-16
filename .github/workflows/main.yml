@@ -28,7 +28,7 @@ jobs:
         run: yarn build  # Adjust if your build command is different
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3  # Updated to v3
         with:
           name: build
           path: dist/  # Adjust path based on your build output
@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3  # Updated to v3
         with:
           name: build
 
