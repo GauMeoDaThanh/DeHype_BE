@@ -1,5 +1,12 @@
 import { Exclude } from 'class-transformer';
-import { BeforeInsert, Column, Entity, PrimaryColumn } from 'typeorm';
+import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
+import {
+  BeforeInsert,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
 
 @Entity()
 export class User {
@@ -12,6 +19,12 @@ export class User {
 
   @Column()
   username: string;
+
+  @Column({
+    default:
+      'https://res.cloudinary.com/diwacy6yr/image/upload/v1728441530/User/default.png',
+  })
+  avatarUrl: string;
 
   @Column({ default: 0 })
   joinedMarkets: number;
@@ -26,4 +39,7 @@ export class User {
   setUsername() {
     this.username = this.walletAddress;
   }
+
+  @OneToMany(() => MarketComment, (marketComment) => marketComment.user)
+  marketComments: MarketComment[];
 }

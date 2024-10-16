@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +11,8 @@ import { User } from './entities/user.entity';
 import { IsNull, Repository } from 'typeorm';
 import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { extractPublicId } from 'cloudinary-build-url';
 
 @Injectable()
 export class UserService {
@@ -14,6 +21,7 @@ export class UserService {
     private usersRepository: Repository<User>,
     @InjectRepository(PendingUser)
     private pendingUserRepository: Repository<PendingUser>,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
@@ -85,19 +93,43 @@ export class UserService {
     return null;
   }
 
+  async uploadAvatar(file: Express.Multer.File, user: any) {
+    const { walletAddress } = user;
+    const userInfo = await this.getUser(walletAddress);
+    const publicId = extractPublicId(userInfo.avatarUrl);
+
+    if (publicId !== 'User/default') {
+      this.cloudinaryService.removeFile(publicId);
+    }
+
+    const folder = 'user';
+    const uploadResult = await this.cloudinaryService.uploadFile(file, folder);
+
+    this.usersRepository.update(walletAddress, { avatarUrl: uploadResult.url });
+
+    return uploadResult;
+  }
+
   findAll() {
     return `This action returns all user`;
   }
 
   async findOne(walletAddress: string) {
-    const user = this.getUser(walletAddress);
+    const user = await this.getUser(walletAddress);
 
-    if (user === null) throw new BadRequestException('Invalid user address');
+    if (user === null) throw new NotFoundException('Invalid user address');
     return instanceToPlain(user);
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(walletAddress: string, updateUserDto: UpdateUserDto) {
+    try {
+      const { username } = updateUserDto;
+      return await this.usersRepository.update(walletAddress, {
+        username: username,
+      });
+    } catch (error) {
+      throw new InternalServerErrorException('Something went wrong');
+    }
   }
 
   remove(id: number) {

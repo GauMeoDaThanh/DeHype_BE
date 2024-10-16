@@ -5,32 +5,33 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './modules/user/user.module';
-import { User } from './modules/user/entities/user.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/passport/jwt-auth.guard';
 import { MarketModule } from './modules/market/market.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { MarketCommentModule } from './modules/market-comment/market-comment.module';
+import { BlogModule } from './modules/blog/blog.module';
+import typeorm from './config/typeorm';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      load: [typeorm],
     }),
     TypeOrmModule.forRootAsync({
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        database: 'dehype',
-        autoLoadEntities: true,
-        synchronize: true,
-        ssl: { rejectUnauthorized: false }, // Conditional SSL
-      }),
+      useFactory: async (configService: ConfigService) =>
+        configService.get('typeorm'),
       inject: [ConfigService],
     }),
     AuthModule,
     UserModule,
     MarketModule,
     MetadataModule,
+    CloudinaryModule,
+    MarketCommentModule,
+    BlogModule,
   ],
   controllers: [AppController],
   providers: [
@@ -41,4 +42,4 @@ import { MetadataModule } from './modules/metadata/metadata.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}
