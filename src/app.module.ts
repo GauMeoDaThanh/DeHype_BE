@@ -11,7 +11,6 @@ import { MarketModule } from './modules/market/market.module';
 import { MetadataModule } from './modules/metadata/metadata.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { MarketCommentModule } from './modules/market-comment/market-comment.module';
-import { BlogModule } from './modules/blog/blog.module';
 import typeorm from './config/typeorm';
 
 @Module({
@@ -31,7 +30,6 @@ import typeorm from './config/typeorm';
     MetadataModule,
     CloudinaryModule,
     MarketCommentModule,
-    BlogModule,
   ],
   controllers: [AppController],
   providers: [
@@ -42,4 +40,4 @@ import typeorm from './config/typeorm';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
