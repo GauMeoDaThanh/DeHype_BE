@@ -54,6 +54,9 @@ jobs:
 
       - name: Deploy to EC2
         run: |
+          echo "Host *" >> ~/.ssh/config
+          echo "  ServerAliveInterval 60" >> ~/.ssh/config
+          echo "  ServerAliveCountMax 30" >> ~/.ssh/config
           echo "Setting up SSH directory"
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
@@ -111,5 +114,6 @@ jobs:
             cd /home/ec2-user/${{ vars.app_name }}/dist
             rm -rf node_modules 
             yarn install 
+            yarn add lodash
             pm2 restart all || pm2 start main.js --name ${{ vars.app_name }}
           EOF
