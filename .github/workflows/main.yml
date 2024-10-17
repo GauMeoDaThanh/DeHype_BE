@@ -27,11 +27,20 @@ jobs:
       - name: Build application
         run: yarn build  # Adjust if your build command is different
 
+      - name: Copy package.json to dist folder
+        run: cp package.json dist/
+
+      - name: Copy yarn.lock to dist folder
+        run: cp yarn.lock dist/
+
+      - name: Check current directory content
+        run: ls -la dist/  # Check the contents of the dist directory
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v3  # Updated to v3
         with:
           name: build
-          path: dist/  # Adjust path based on your build output
+          path: dist/  # Upload all files generated in the dist directory
 
   deploy:
     needs: build
@@ -57,8 +66,8 @@ jobs:
           echo "Creating destination directory on EC2"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}"
 
-          echo "Attempting SCP transfer of dist and package.json"
-          scp -v -i ~/.ssh/id_rsa -r dist/ package.json yarn.lock ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+          echo "Attempting SCP transfer of all files"
+          scp -v -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
 
           if [ $? -eq 0 ]; then
             echo "SCP transfer completed successfully"
@@ -72,17 +81,24 @@ jobs:
             echo "Contents of app directory on EC2:"
             ls -R /home/ec2-user/${{ vars.app_name }}
             
-            if [ -d "/home/ec2-user/${{ vars.app_name }}/dist" ] && [ -f "/home/ec2-user/${{ vars.app_name }}/package.json" ]; then
-              echo "dist directory and package.json found on EC2"
+            if [ -f "/home/ec2-user/${{ vars.app_name }}/package.json" ]; then
+              echo "package.json found on EC2"
             else
-              echo "dist directory or package.json not found on EC2"
+              echo "package.json not found on EC2"
               exit 1
             fi
+
+            # if [ -f "/home/ec2-user/${{ vars.app_name }}/yarn.lock" ]; then
+            #   echo "yarn.lock found on EC2"
+            # else
+            #   echo "yarn.lock not found on EC2"
+            #   exit 1
+            # fi
           EOF
 
           echo "Continuing with deployment"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
             cd /home/ec2-user/${{ vars.app_name }}
             yarn install --production
-            pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
+            pm2 restart all || pm2 start main.js --name ${{ vars.app_name }}
           EOF
