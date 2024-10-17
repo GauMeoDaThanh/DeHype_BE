@@ -2,61 +2,94 @@ name: CI/CD Pipeline for Node.js
 
 on:
   push:
-    branches:
-      - main  # Triggers on pushes to the main branch
+    branches: [ main ]
   pull_request:
-    branches:
-      - main  # Triggers on pull requests to the main branch
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '18.x'
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '18.x'
 
-      - name: Install dependencies
-        run: yarn install  # Use npm install if you're using npm
+    - name: Install dependencies
+      run: yarn install
 
-      - name: Build application
-        run: yarn build  # Adjust if your build command is different
+    - name: Build application
+      run: yarn build
 
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3  # Updated to v3
-        with:
-          name: build
-          path: dist/  # Adjust path based on your build output
+    - name: List build output
+      run: |
+        echo "Contents of current directory:"
+        ls -R
+        echo "Contents of dist directory (if it exists):"
+        ls -R dist || echo "dist directory not found"
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: build
+        path: dist/
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3  # Updated to v3
-        with:
-          name: build
+    - name: Download build artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: build
 
-      - name: Deploy to EC2
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          sudo chmod 700 /root/.ssh
-          sudo chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
+    - name: List downloaded artifacts
+      run: |
+        echo "Current working directory:"
+        pwd
+        echo "Contents of current directory:"
+        ls -R
 
-          # Transfer build files to EC2 instance
-          scp -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+    - name: Deploy to EC2
+      run: |
+        echo "Setting up SSH directory"
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
 
-          # SSH into EC2 and install production dependencies & restart the app
-          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
-            cd /home/ec2-user/${{ vars.app_name }}
-            yarn install --production
-            pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
-          EOF
+        echo "Contents of ~/.ssh directory:"
+        ls -la ~/.ssh
+
+        echo "Attempting SCP transfer"
+        scp -v -i ~/.ssh/id_rsa -r ./* ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+        
+        if [ $? -eq 0 ]; then
+          echo "SCP transfer completed successfully"
+        else
+          echo "SCP transfer failed"
+          exit 1
+        fi
+
+        echo "Verifying transferred files"
+        ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
+          echo "Contents of app directory on EC2:"
+          ls -R /home/ec2-user/${{ vars.app_name }}
+          
+          if [ -d "/home/ec2-user/${{ vars.app_name }}/dist" ]; then
+            echo "dist directory found on EC2"
+          else
+            echo "dist directory not found on EC2"
+            exit 1
+          fi
+        EOF
+
+        echo "Continuing with deployment"
+        ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
+          cd /home/ec2-user/${{ vars.app_name }}
+          yarn install --production
+          pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
+        EOF
