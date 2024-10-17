@@ -54,11 +54,13 @@ jobs:
 
       - name: Deploy to EC2
         run: |
+          echo "Setting up SSH directory"
+          mkdir -p ~/.ssh  # Create the .ssh directory if it doesn't exist
           echo "Host *" >> ~/.ssh/config
           echo "  ServerAliveInterval 60" >> ~/.ssh/config
           echo "  ServerAliveCountMax 30" >> ~/.ssh/config
+
           echo "Setting up SSH directory"
-          mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
