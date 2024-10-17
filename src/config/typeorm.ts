@@ -6,8 +6,6 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 const config = {
   type: 'postgres',
   url: `${process.env.DATABASE_URL}`,
-  entities: [__dirname + '/**/entity/*.entity{.ts,.js}'],
-  migrations: [__dirname + '/**/migrations/*{.ts,.js}'],
   autoLoadEntities: true,
   migrationsRun: true,
   ssl: false,
