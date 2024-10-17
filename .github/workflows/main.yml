@@ -27,6 +27,12 @@ jobs:
       - name: Build application
         run: yarn build  # Adjust if your build command is different
 
+      - name: Decode .env file from secret
+        run: echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
+
+      - name: Move .env file to dist folder
+        run: mv .env dist/ 
+
       - name: Copy package.json to dist folder
         run: cp package.json dist/
 
@@ -99,6 +105,7 @@ jobs:
           echo "Continuing with deployment"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
             cd /home/ec2-user/${{ vars.app_name }}/dist
-            yarn install --production
+            rm -rf node_modules 
+            yarn install 
             pm2 restart all || pm2 start main.js --name ${{ vars.app_name }}
           EOF
