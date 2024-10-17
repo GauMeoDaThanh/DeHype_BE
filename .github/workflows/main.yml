@@ -45,17 +45,41 @@ jobs:
 
       - name: Deploy to EC2
         run: |
+          echo "Setting up SSH directory"
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
 
-          # Transfer build files to EC2 instance
-          scp -i ~/.ssh/id_rsa -r dist/ ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+          echo "Contents of ~/.ssh directory:"
+          ls -la ~/.ssh
 
-          # SSH into EC2 and install production dependencies & restart the app
+          echo "Creating destination directory on EC2"
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}"
+
+          echo "Attempting SCP transfer"
+          scp -v -i ~/.ssh/id_rsa -r ./* ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+
+          if [ $? -eq 0 ]; then
+            echo "SCP transfer completed successfully"
+          else
+            echo "SCP transfer failed"
+            exit 1
+          fi
+
+          echo "Verifying transferred files"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
-            cd /home/ec2-user/${{ vars.app_name }}
-            yarn install --production
-            pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
+            echo "Contents of app directory on EC2:"
+            ls -R /home/ec2-user/${{ vars.app_name }}
+            
+            if [ -d "/home/ec2-user/${{ vars.app_name }}/dist" ]; then
+              echo "dist directory found on EC2"
+            else
+              echo "dist directory not found on EC2"
+              exit 1
+            fi
           EOF
+
+          echo "Continuing with deployment"
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
+            cd /home
