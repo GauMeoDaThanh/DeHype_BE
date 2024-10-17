@@ -82,4 +82,7 @@ jobs:
 
           echo "Continuing with deployment"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
-            cd /home
+            cd /home/ec2-user/${{ vars.app_name }}
+            yarn install --production
+            pm2 restart all || pm2 start dist/main.js --name ${{ vars.app_name }}
+          EOF
