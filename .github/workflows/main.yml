@@ -55,10 +55,10 @@ jobs:
           ls -la ~/.ssh
 
           echo "Creating destination directory on EC2"
-          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}"
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}/dist"
 
           echo "Attempting SCP transfer"
-          scp -v -i ~/.ssh/id_rsa -r ./* ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}
+          scp -v -i ~/.ssh/id_rsa -r ./* ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}/dist
 
           if [ $? -eq 0 ]; then
             echo "SCP transfer completed successfully"
