@@ -27,21 +27,6 @@ jobs:
       - name: Build application
         run: yarn build  # Adjust if your build command is different
 
-      - name: Decode .env file from secret
-        run: echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
-
-      - name: Move .env file to dist folder
-        run: mv .env dist/
-
-      - name: Verify .env file existence in dist folder
-        run: |
-          if [ -f dist/.env ]; then
-            echo ".env file successfully moved to dist folder."
-          else
-            echo ".env file not found in dist folder."
-            exit 1
-          fi
-
       - name: Copy package.json to dist folder
         run: cp package.json dist/
 
@@ -66,6 +51,21 @@ jobs:
         uses: actions/download-artifact@v3  # Updated to v3
         with:
           name: build
+
+      - name: Decode .env file from secret
+        run: echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
+
+      - name: Move .env file to dist folder
+        run: mv .env ./
+
+      - name: Verify .env file existence in dist folder
+        run: |
+          if [ -f dist/.env ]; then
+            echo ".env file successfully moved to dist folder."
+          else
+            echo ".env file not found in dist folder."
+            exit 1
+          fi
 
       - name: Deploy to EC2
         run: |
