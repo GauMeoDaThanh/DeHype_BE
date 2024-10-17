@@ -1,0 +1,19 @@
+JWT_SECRET=9b46614e-9e9e-4100-b409-78c48af4d827
+JWT_ACCESS_TOKEN_EXPIRED=2d
+
+JWT_REFRESH_SECRET = "dehype"
+JWT_REFRESH_TOKEN_EXPIRED=3650d
+
+SIGN_IN_MSG="dehype"
+
+DATABASE_URL="postgresql://postgres.ociqlofwswfjeubnkawp:D8eAz1vQoatDGP8X@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres"
+# DATABASE_URL="postgresql://postgres.xxqmgsionffnwqujcuio:123456789@optest@aws-0-ap-northeast-1.pooler.supabase.com:6543/postgres"
+
+SOLANA_RPC_URL="https://api.devnet.solana.com"
+DEHYPE_PROGRAM_PUBKEY="GqroybDr5ep6GHJnk9XpmL6aamr7GRAsBQtSoy7SJwRV"
+ANCHOR_PROVIDER_URL="https://api.devnet.solana.com"
+WEB3_STORAGE_TOKEN="ok"
+
+CLOUD_NAME="diwacy6yr"
+CLOUD_API_KEY="281448782827697"
+CLOUD_API_SECRET="UFIFTidWgvQ1SQnR3-Nd4GanES0"
