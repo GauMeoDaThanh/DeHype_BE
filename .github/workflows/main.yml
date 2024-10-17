@@ -52,18 +52,6 @@ jobs:
         with:
           name: build
 
-      - name: Decode .env file from secret
-        run: echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
-
-      - name: Verify .env file existence in dist folder
-        run: |
-          if [ -f ./.env ]; then
-            echo ".env file successfully moved to dist folder."
-          else
-            echo ".env file not found in dist folder."
-            exit 1
-          fi
-
       - name: Deploy to EC2
         run: |
           echo "Setting up SSH directory"
@@ -78,8 +66,18 @@ jobs:
           echo "Creating destination directory on EC2"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}/dist"
 
+          echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
+
+          if [ -f ./.env ]; then
+            echo ".env file successfully moved to dist folder."
+          else
+            echo ".env file not found in dist folder."
+            exit 1
+          fi
+
+
           echo "Attempting SCP transfer of all files"
-          scp -v -i ~/.ssh/id_rsa -r ./* ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}/dist
+          scp -v -i ~/.ssh/id_rsa -r ./* ./.env ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}/dist
 
           if [ $? -eq 0 ]; then
             echo "SCP transfer completed successfully"
