@@ -70,7 +70,7 @@ jobs:
           echo "Verifying transferred files"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
             echo "Contents of app directory on EC2:"
-            ls -R /home/ec2-user/${{ vars.app_name }}
+            ls -R /home/ec2-user/${{ vars.app_name }}/dist
             
             if [ -d "/home/ec2-user/${{ vars.app_name }}/dist" ]; then
               echo "dist directory found on EC2"
