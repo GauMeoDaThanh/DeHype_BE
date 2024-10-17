@@ -117,7 +117,8 @@ jobs:
             cp wallet.json ./dist/
             cd /home/ec2-user/${{ vars.app_name }}/dist
             rm -rf node_modules 
-            yarn install 
+            echo "Installing dependencies..."
+            yarn install || { echo "Failed to install dependencies"; exit 1; }
             yarn add lodash
             pm2 restart all || pm2 start main.js --name ${{ vars.app_name }}
           EOF
