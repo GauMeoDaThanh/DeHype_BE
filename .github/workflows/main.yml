@@ -47,7 +47,8 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
+          sudo chmod 700 /root/.ssh
+          sudo chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
 
           # Transfer build files to EC2 instance
