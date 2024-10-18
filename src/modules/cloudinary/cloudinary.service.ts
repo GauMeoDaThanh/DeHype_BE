@@ -25,4 +25,8 @@ export class CloudinaryService {
   async removeFile(publicId: string) {
     return await cloudinary.uploader.destroy(publicId);
   }
+
+  async removeFiles(public_ids: string[]) {
+    return await cloudinary.api.delete_resources(public_ids);
+  }
 }
