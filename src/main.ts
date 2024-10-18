@@ -31,6 +31,8 @@ async function bootstrap() {
 
   SwaggerModule.setup('api', app, document);
   console.log(`Server running on port ${port}`);
-  await app.listen(port);
+
+  // Bind to all IPv4 addresses
+  await app.listen(port, '0.0.0.0');
 }
 bootstrap();
