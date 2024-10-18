@@ -30,8 +30,8 @@ jobs:
       - name: Copy package.json to dist folder
         run: cp package.json dist/
 
-      - name: Copy yarn.lock to dist folder
-        run: cp yarn.lock dist/
+      # - name: Copy yarn.lock to dist folder
+      #   run: cp yarn.lock dist/
 
       - name: Check current directory content
         run: ls -la dist/  # Check the contents of the dist directory
