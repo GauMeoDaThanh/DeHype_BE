@@ -18,7 +18,9 @@ export class MarketComment {
   @Column()
   comment: string;
 
-  @ManyToOne(() => User, (user) => user.marketComments)
+  @ManyToOne(() => User, (user) => user.marketComments, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'walletAddress' })
   user: User;
 
@@ -27,6 +29,7 @@ export class MarketComment {
 
   @ManyToOne(() => MarketComment, (parentComment) => parentComment.replies, {
     nullable: true,
+    onDelete: 'CASCADE',
   })
   parentComment: MarketComment;
 
