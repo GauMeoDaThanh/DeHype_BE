@@ -1,0 +1,85 @@
+name: CI/CD Pipeline for Node.js
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18.x'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build application
+        run: yarn build
+
+      - name: Prepare dist folder
+        run: |
+          cp package.json dist/
+          cp yarn.lock dist/
+          echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > dist/.env
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: dist/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ vars.ec2_ip }} >> ~/.ssh/known_hosts
+
+      - name: Deploy to EC2
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << EOF
+            # Prepare new deployment directory
+            mkdir -p /home/ec2-user/${{ vars.app_name }}_new
+            
+            # Copy new files
+            scp -i ~/.ssh/id_rsa -r ./* ./.env ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}_new/
+            
+            # Install dependencies in new directory
+            cd /home/ec2-user/${{ vars.app_name }}_new
+            cp /home/ec2-user/${{ vars.app_name }}/wallet.json ./
+            yarn install
+            yarn add lodash
+            
+            # Stop current application (if running)
+            pm2 stop ${{ vars.app_name }} || true
+            
+            # Swap directories
+            mv /home/ec2-user/${{ vars.app_name }} /home/ec2-user/${{ vars.app_name }}_old || true
+            mv /home/ec2-user/${{ vars.app_name }}_new /home/ec2-user/${{ vars.app_name }}
+            
+            # Start new application
+            cd /home/ec2-user/${{ vars.app_name }}
+            pm2 start main.js --name ${{ vars.app_name }} || pm2 restart ${{ vars.app_name }}
+            
+            # Clean up old directory
+            rm -rf /home/ec2-user/${{ vars.app_name }}_old
+          EOF
