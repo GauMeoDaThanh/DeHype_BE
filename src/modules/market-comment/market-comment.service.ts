@@ -23,7 +23,7 @@ import aqp from 'api-query-params';
 import {
   GetMarketCommentsResponse,
   MetaDto,
-} from './dto/read-market-comment.dto';
+} from './dto/response-market-comment.dto';
 
 @Injectable()
 export class MarketCommentService {
@@ -54,7 +54,7 @@ export class MarketCommentService {
     walletAddress: string,
   ) {
     const newComment = this.marketCommentRepository.create({
-      comment: createMarketCommentDto.content,
+      comment: createMarketCommentDto.content.trim(),
       marketId: marketId,
       user: { walletAddress: walletAddress },
     });
@@ -84,7 +84,7 @@ export class MarketCommentService {
       });
     }
     const newComment = this.marketCommentRepository.create({
-      comment: createMarketCommentDto.content,
+      comment: createMarketCommentDto.content.trim(),
       marketId: params.marketId,
       user: { walletAddress: walletAddress },
       parentComment: { id: params.parentCommentId },
@@ -109,7 +109,7 @@ export class MarketCommentService {
       );
 
     return await this.marketCommentRepository.update(params.commentId, {
-      comment: updateMarketCommentDto.content,
+      comment: updateMarketCommentDto.content.trim(),
     });
   }
 
@@ -123,39 +123,38 @@ export class MarketCommentService {
       throw new ForbiddenException(
         'You do not have permission to delete this comment',
       );
-
-    const comment = await this.marketCommentRepository.findOne({
-      where: { id: params.commentId },
-      relations: ['parentComment'],
-    });
-
-    if (comment.parentComment === null) {
-      await this.marketCommentRepository
-        .createQueryBuilder()
-        .delete()
-        .from(MarketComment)
-        .where('parentComment = :commentId', { commentId: params.commentId })
-        .execute();
-    }
-
     return await this.marketCommentRepository.delete(params.commentId);
   }
 
   async findAllMarketComments(query: string, marketId: string) {
     const { filter, sort } = aqp(query);
     let { pageSize, current, ...restFilter } = filter;
+    const allowedSortColumns = [];
 
     if (!pageSize) pageSize = 10;
     if (!current) current = 1;
+    if (sort) {
+      const sortField = Object.keys(sort);
+      sortField.forEach((field) => {
+        if (allowedSortColumns.includes(field) === false)
+          throw new BadRequestException(`Invalid sort column: ${field}`);
+      });
+    }
 
     const [results, totalItems] =
       await this.marketCommentRepository.findAndCount({
         relations: ['replies', 'user', 'replies.user'],
         where: { parentComment: IsNull(), marketId: marketId, ...restFilter },
-        order: sort,
         take: pageSize,
         skip: (current - 1) * pageSize,
       });
+
+    results.forEach((comment) => {
+      comment.replies.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+    });
 
     const customizedResults = results.map((result) => ({
       id: result.id,
