@@ -32,7 +32,7 @@ import {
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { Public } from 'src/decorators/public-route';
-import { GetMarketCommentsResponse } from './dto/read-market-comment.dto';
+import { GetMarketCommentsResponse } from './dto/response-market-comment.dto';
 
 @ApiTags(Tag.MARKET_COMMENT)
 @Controller('markets')
@@ -48,7 +48,6 @@ export class MarketCommentController {
     @Body() createMarketCommentDto: CreateMarketCommentDto,
     @Wallet() walletAddress: string,
   ) {
-    console.log(walletAddress);
     return this.marketCommentService.createComment(
       marketId,
       createMarketCommentDto,

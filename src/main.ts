@@ -9,7 +9,9 @@ async function bootstrap() {
   const configServer = app.get(ConfigService);
   const port = configServer.get('PORT') || 8080;
 
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+  );
 
   app.setGlobalPrefix('api/v1', { exclude: [''] });
   app.enableCors();
@@ -27,6 +29,7 @@ async function bootstrap() {
     { name: Tag.AUTHENTICATE },
     { name: Tag.USER },
     { name: Tag.MARKET_COMMENT },
+    { name: Tag.BLOG },
   ];
 
   SwaggerModule.setup('api', app, document);

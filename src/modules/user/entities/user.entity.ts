@@ -1,4 +1,5 @@
 import { Exclude } from 'class-transformer';
+import { Blog } from 'src/modules/blog/entities/blog.entity';
 import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
 import {
   BeforeInsert,
@@ -42,4 +43,7 @@ export class User {
 
   @OneToMany(() => MarketComment, (marketComment) => marketComment.user)
   marketComments: MarketComment[];
+
+  @OneToMany(() => Blog, (blog) => blog.user)
+  blogs: Blog[];
 }

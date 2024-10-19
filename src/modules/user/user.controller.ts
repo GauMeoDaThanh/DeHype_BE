@@ -29,6 +29,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
+import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -95,7 +96,10 @@ export class UserController {
   })
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
-  uploadAvatar(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+  uploadAvatar(
+    @UploadedFile(new FileValidationPipe()) file: Express.Multer.File,
+    @Req() req: Request,
+  ) {
     return this.userService.uploadAvatar(file, req.user);
   }
 
