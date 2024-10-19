@@ -4,6 +4,11 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
+import {
+  ALLOWED_MIME_TYPES,
+  ERROR_MESSAGES,
+  MAX_FILE_SIZE,
+} from 'src/constants/file-upload-validate';
 
 @Injectable()
 export class FileValidationPipe implements PipeTransform {
@@ -11,16 +16,15 @@ export class FileValidationPipe implements PipeTransform {
     const file = value;
 
     if (!file) {
-      throw new BadRequestException('File is required!');
+      throw new BadRequestException(ERROR_MESSAGES.FILE_REQUIRED);
     }
 
-    const allowedMimeTypes = ['image/jpeg', 'image/png'];
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Invalid file type!');
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_FILE_TYPE);
     }
 
-    if (file.size > 1024 * 1024 * 5) {
-      throw new BadRequestException('File is too large!');
+    if (file.size > MAX_FILE_SIZE) {
+      throw new BadRequestException(ERROR_MESSAGES.FILE_TOO_LARGE);
     }
 
     return file;
