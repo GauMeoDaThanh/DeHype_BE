@@ -30,6 +30,7 @@ jobs:
       - name: Copy package.json to dist folder
         run: cp package.json dist/
 
+      # Optional: Copy yarn.lock if needed
       # - name: Copy yarn.lock to dist folder
       #   run: cp yarn.lock dist/
 
@@ -45,6 +46,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'  # Only run on push to main
 
     steps:
       - name: Download build artifacts
@@ -80,7 +82,6 @@ jobs:
             exit 1
           fi
 
-
           echo "Attempting SCP transfer of all files"
           scp -v -i ~/.ssh/id_rsa -r ./* ./.env ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}/dist
 
@@ -95,20 +96,6 @@ jobs:
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
             echo "Contents of app directory on EC2:"
             ls -R /home/ec2-user/${{ vars.app_name }}
-            
-            # if [ -f "/home/ec2-user/${{ vars.app_name }}/package.json" ]; then
-            #   echo "package.json found on EC2"
-            # else
-            #   echo "package.json not found on EC2"
-            #   exit 1
-            # fi
-
-            # if [ -f "/home/ec2-user/${{ vars.app_name }}/yarn.lock" ]; then
-            #   echo "yarn.lock found on EC2"
-            # else
-            #   echo "yarn.lock not found on EC2"
-            #   exit 1
-            # fi
           EOF
 
           echo "Continuing with deployment"
