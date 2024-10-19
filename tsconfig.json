@@ -1,24 +1,30 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "target": "ES2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": false,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false
-  }
+    "target": "ES2021", // Set the JavaScript version to compile to
+    "module": "commonjs", // Specify module code generation
+    "strict": true, // Enable all strict type-checking options
+    "esModuleInterop": true, // Enables emit interoperability between CommonJS and ES Modules
+    "skipLibCheck": true, // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Disallow inconsistently-cased references to the same file
+    "outDir": "./dist", // Redirect output structure to the `dist` directory
+    "rootDir": "./src", // Specify the root directory of input files
+    "declaration": true, // Generates corresponding '.d.ts' file
+    "removeComments": true, // Remove comments from output
+    "emitDecoratorMetadata": true, // Enables experimental support for decorators
+    "experimentalDecorators": true, // Enables experimental support for decorators
+    "resolveJsonModule": true, // Allow importing .json files
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+    "incremental": true, // Enables incremental compilation
+    "sourceMap": true, // Generates corresponding '.map' file for debugging
+    "lib": ["ES2021", "DOM"], // Specify library files to be included in the compilation
+    "strictNullChecks": true, // Enable strict null checks
+    "noImplicitAny": false, // Raise error on expressions and declarations with an implied 'any' type
+    "noFallthroughCasesInSwitch": true, // Report errors for fallthrough cases in switch statements
+    "baseUrl": ".", // Base directory to resolve non-relative module names
+    "paths": {
+      "*": ["node_modules/*", "src/types/*"] // Specify paths to resolve modules
+    }
+  },
+  "include": ["src/**/*"], // Include all TypeScript files in the `src` directory
+  "exclude": ["node_modules", "**/*.spec.ts"] // Exclude node_modules and test files
 }
