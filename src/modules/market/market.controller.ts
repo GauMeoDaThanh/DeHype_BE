@@ -1,26 +1,38 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { MarketService } from './market.service';
 import { CreateMarketDto } from './dto/create-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@Controller('market')
+@Controller('markets')
 export class MarketController {
-  constructor(private readonly marketService: MarketService) { }
+  constructor(private readonly marketService: MarketService) {}
 
   @Post()
   @Public()
   @ApiOperation({ summary: 'Create a market transaction' })
-  @ApiResponse({ status: 201, description: 'The market transaction has been successfully created.' })
+  @ApiResponse({
+    status: 201,
+    description: 'The market transaction has been successfully created.',
+  })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-
   create(@Body() createMarketDto: CreateMarketDto) {
     return this.marketService.createMarketTransaction(createMarketDto);
   }
 
+  @Public()
   @Get()
   findAll() {
+    return this.marketService.getMarkets();
     // return this.marketService.findAll();
   }
 
