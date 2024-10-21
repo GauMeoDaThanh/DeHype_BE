@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,11 +26,13 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
+import { GetUserReponse } from './dto/response-user.dto';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -121,9 +124,29 @@ export class UserController {
     return this.userService.remove(+id);
   }
 
-  @ApiExcludeEndpoint()
+  // @ApiBearerAuth()
+  @ApiOperation({ summary: 'get all users information' })
+  @ApiOkResponse({ type: GetUserReponse })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Number of record each page',
+  })
+  @ApiQuery({ name: 'current', required: false, description: 'Current page' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Number of record each page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    description: 'Current page',
+    example: '-createdAt',
+  })
+  @Public()
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Query() query: string) {
+    return this.userService.findAll(query);
   }
 }

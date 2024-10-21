@@ -13,6 +13,12 @@ import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { extractPublicId } from 'cloudinary-build-url';
+import aqp from 'api-query-params';
+import {
+  GetUserReponse,
+  MetaDto,
+  UserResultDto,
+} from './dto/response-user.dto';
 
 @Injectable()
 export class UserService {
@@ -110,8 +116,51 @@ export class UserService {
     return uploadResult;
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll(query: string) {
+    const { filter, sort } = aqp(query);
+    const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
+
+    let { pageSize, current, ...restFilter } = filter;
+
+    if (!pageSize) pageSize = 10;
+    if (!current) current = 1;
+    if (sort) {
+      const sortField = Object.keys(sort);
+      sortField.forEach((field) => {
+        if (allowedSortColumns.includes(field) === false)
+          throw new BadRequestException(`Invalid sort column: ${field}`);
+      });
+    }
+
+    const [results, totalItems] = await this.usersRepository.findAndCount({
+      relations: ['blockUser'],
+      where: { ...restFilter },
+      order: sort,
+      take: pageSize,
+      skip: (current - 1) * pageSize,
+    });
+
+    const customizedResults: UserResultDto[] = results.map((user) => ({
+      walletAddress: user.walletAddress,
+      username: user.username,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      isBlocked: user.blockUser ? true : false,
+    }));
+
+    const meta: MetaDto = {
+      current: current,
+      pageSize: pageSize,
+      pages: Math.ceil(totalItems / pageSize),
+      total: totalItems,
+    };
+
+    const response: GetUserReponse = {
+      users: customizedResults,
+      meta: meta,
+    };
+
+    return response;
   }
 
   async findOne(walletAddress: string) {
