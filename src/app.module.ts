@@ -13,6 +13,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { MarketCommentModule } from './modules/market-comment/market-comment.module';
 import typeorm from './config/typeorm';
 import { BlogModule } from './modules/blog/blog.module';
+import { BlockUserModule } from './modules/block-user/block-user.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { BlogModule } from './modules/blog/blog.module';
     CloudinaryModule,
     MarketCommentModule,
     BlogModule,
+    BlockUserModule,
   ],
   controllers: [AppController],
   providers: [

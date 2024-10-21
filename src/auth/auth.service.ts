@@ -1,6 +1,7 @@
 import {
   BadGatewayException,
   BadRequestException,
+  ForbiddenException,
   HttpStatus,
   Injectable,
   NotFoundException,
@@ -16,11 +17,13 @@ import { pseudoRandomBytes } from 'crypto';
 import base58 from 'bs58';
 import { PublicKey, Transaction } from '@solana/web3.js';
 import { instanceToPlain } from 'class-transformer';
+import { BlockUserService } from 'src/modules/block-user/block-user.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService: UserService,
+    private blockUserService: BlockUserService,
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
@@ -54,7 +57,14 @@ export class AuthService {
     const { walletAddress } = loginDto;
 
     const user = await this.userService.getUser(walletAddress);
+    const blockInfo = await this.blockUserService.findBlockUser(walletAddress);
+
     if (!user) throw new UnauthorizedException('Wallet not found');
+    if (blockInfo)
+      throw new ForbiddenException({
+        error: 'This address has been banned',
+        blockInfo,
+      });
 
     const accessPayload = {
       username: user.username,

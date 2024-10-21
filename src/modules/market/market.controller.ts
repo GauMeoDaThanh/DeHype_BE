@@ -12,7 +12,9 @@ import { CreateMarketDto } from './dto/create-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Tag } from 'src/constants/api-tag.enum';
 
+@ApiTags(Tag.MARKET)
 @Controller('markets')
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
