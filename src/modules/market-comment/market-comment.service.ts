@@ -193,7 +193,4 @@ export class MarketCommentService {
 
     return response;
   }
-  catch(error) {
-    throw new InternalServerErrorException('Something happen');
-  }
 }

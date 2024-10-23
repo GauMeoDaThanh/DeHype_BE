@@ -9,6 +9,7 @@ import {
   UseInterceptors,
   UploadedFile,
   Req,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,11 +26,14 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
+import { GetUserReponse } from './dto/response-user.dto';
+import { Wallet } from 'src/decorators/current-wallet';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -103,14 +107,14 @@ export class UserController {
     return this.userService.uploadAvatar(file, req.user);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'update user information' })
-  @ApiParam({ name: 'id', type: String, description: 'user wallet address' })
   @ApiOkResponse({ description: 'Successful operation' })
   @ApiInternalServerErrorResponse({ description: 'Server error' })
-  @Patch(':id')
+  @Patch()
   update(
-    @Param('id') walletAddress: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Wallet() walletAddress: string,
   ) {
     return this.userService.update(walletAddress, updateUserDto);
   }
@@ -121,9 +125,29 @@ export class UserController {
     return this.userService.remove(+id);
   }
 
-  @ApiExcludeEndpoint()
+  // @ApiBearerAuth()
+  @ApiOperation({ summary: 'get all users information' })
+  @ApiOkResponse({ type: GetUserReponse })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Number of record each page',
+  })
+  @ApiQuery({ name: 'current', required: false, description: 'Current page' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Number of record each page',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    description: 'Current page',
+    example: '-createdAt',
+  })
+  @Public()
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  findAll(@Query() query: string) {
+    return this.userService.findAll(query);
   }
 }

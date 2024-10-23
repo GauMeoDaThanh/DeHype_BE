@@ -8,6 +8,7 @@ import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtStrategy } from './passport/jwt.strategy';
 import { RefreshStrategy } from './passport/refresh.strategy';
+import { BlockUserModule } from 'src/modules/block-user/block-user.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RefreshStrategy } from './passport/refresh.strategy';
     }),
     UserModule,
     PassportModule,
+    BlockUserModule,
   ],
 
   controllers: [AuthController],

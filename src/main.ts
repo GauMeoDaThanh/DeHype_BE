@@ -28,6 +28,7 @@ async function bootstrap() {
   document.tags = [
     { name: Tag.AUTHENTICATE },
     { name: Tag.USER },
+    { name: Tag.MARKET },
     { name: Tag.MARKET_COMMENT },
     { name: Tag.BLOG },
   ];

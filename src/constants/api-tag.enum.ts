@@ -3,4 +3,5 @@ export enum Tag {
   USER = 'Users',
   AUTHENTICATE = 'Authenticate',
   BLOG = 'Blogs',
+  MARKET = 'Markets',
 }

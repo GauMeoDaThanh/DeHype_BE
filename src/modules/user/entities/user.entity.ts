@@ -1,4 +1,5 @@
 import { Exclude } from 'class-transformer';
+import { BlockUser } from 'src/modules/block-user/entities/block-user.entity';
 import { Blog } from 'src/modules/blog/entities/blog.entity';
 import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
 import {
@@ -6,6 +7,7 @@ import {
   Column,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
 } from 'typeorm';
 
@@ -46,4 +48,7 @@ export class User {
 
   @OneToMany(() => Blog, (blog) => blog.user)
   blogs: Blog[];
+
+  @OneToOne(() => BlockUser, (blockUser) => blockUser.user)
+  blockUser: BlockUser;
 }
