@@ -33,6 +33,7 @@ import {
 import { Tag } from 'src/constants/api-tag.enum';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
 import { GetUserReponse } from './dto/response-user.dto';
+import { Wallet } from 'src/decorators/current-wallet';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -106,14 +107,14 @@ export class UserController {
     return this.userService.uploadAvatar(file, req.user);
   }
 
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'update user information' })
-  @ApiParam({ name: 'id', type: String, description: 'user wallet address' })
   @ApiOkResponse({ description: 'Successful operation' })
   @ApiInternalServerErrorResponse({ description: 'Server error' })
-  @Patch(':id')
+  @Patch()
   update(
-    @Param('id') walletAddress: string,
     @Body() updateUserDto: UpdateUserDto,
+    @Wallet() walletAddress: string,
   ) {
     return this.userService.update(walletAddress, updateUserDto);
   }
