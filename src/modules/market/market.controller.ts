@@ -23,6 +23,7 @@ import {
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
 import { Wallet } from 'src/decorators/current-wallet';
+import { MarketDetailDto, VoterListDto } from './dto/market-detail.dto';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -56,7 +57,7 @@ export class MarketController {
   @ApiInternalServerErrorResponse({
     description: 'Failed to fetch market stats',
   })
-  @ApiOkResponse()
+  @ApiOkResponse({ type: MarketDetailDto })
   @Public()
   @Get(':id')
   findOne(@Param('id') id: PublicKey) {
@@ -68,7 +69,7 @@ export class MarketController {
   @ApiInternalServerErrorResponse({
     description: 'Failed to fetch voters',
   })
-  @ApiOkResponse()
+  @ApiOkResponse({ type: VoterListDto })
   @Public()
   @Get(':id/voters')
   votersInMarket(@Param('id') id: PublicKey) {

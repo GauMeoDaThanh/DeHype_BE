@@ -1,5 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { ApiProperty } from '@nestjs/swagger';
 
 export type MarketAccount = {
   bump: number; // u8
