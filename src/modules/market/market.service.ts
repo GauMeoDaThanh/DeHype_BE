@@ -58,7 +58,7 @@ export class MarketService {
       )) as MarketAccount;
       const marketStats = await this.marketStats(marketPublicKey);
 
-      return { marketAccount, marketStats };
+      return { ...marketAccount, marketStats };
     } catch (error) {
       throw error;
     }
@@ -101,8 +101,8 @@ export class MarketService {
 
       return {
         name: answer.name,
-        totalTokens: answer.answerTotalTokens,
-        totalVolume,
+        totalTokens: answer.answerTotalTokens.toNumber() / SOLANA_DECIMALS,
+        totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         percentage: displayPercentage,
       };
     });
@@ -119,6 +119,17 @@ export class MarketService {
         await program.account.marketAccount.fetch(marketPublicKey);
       const voters = await program.account.bettingAccount.all();
 
+      const [answerPDA] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('answer'),
+          marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+        ],
+        program.programId,
+      );
+      const answerAccount = (await program.account.answerAccount.fetch(
+        answerPDA,
+      )) as unknown as AnswerAccount;
+
       const votersInMarket = voters.filter((voter) =>
         voter.account.marketKey.eq(marketAccount.marketKey),
       );
@@ -129,12 +140,16 @@ export class MarketService {
         ).toUTCString();
         voter.account.tokens =
           voter.account.tokens.toNumber() / SOLANA_DECIMALS;
-
+        const answerName = answerAccount.answers.find((ans) =>
+          ans.answerKey.eq(voter.account.answerKey),
+        );
+        voter.account.answerKey = answerName.name;
         return voter;
       });
 
       return result;
     } catch (error) {
+      console.log(error);
       throw new InternalServerErrorException(
         `failed to fetch voters in market ${marketPublicKey}`,
       );

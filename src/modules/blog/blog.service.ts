@@ -211,7 +211,7 @@ export class BlogService {
     };
 
     const response: GetBlogResponse = {
-      comments: customizedResults,
+      blogs: customizedResults,
       meta: meta,
     };
 
