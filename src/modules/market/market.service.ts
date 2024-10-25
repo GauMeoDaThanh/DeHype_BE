@@ -1,8 +1,23 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { Keypair, PublicKey, SystemProgram, Transaction } from '@solana/web3.js';
-import { CreateMarketDto, ResolveMarketDto } from './dto/create-market.dto';
-import { MarketAccount, MarketResponse } from './dto/response-market.dto';
-import { connection, program } from 'src/constants';
+import {
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+} from '@solana/web3.js';
+import {
+  CreateBetDto,
+  CreateMarketDto,
+  ResolveMarketDto,
+} from './dto/create-market.dto';
+import {
+  AnswerAccount,
+  MarketAccount,
+  MarketResponse,
+} from './dto/response-market.dto';
+import { connection, program, SOLANA_DECIMALS } from 'src/constants';
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { BN } from '@coral-xyz/anchor';
 
 @Injectable()
 export class MarketService {
@@ -16,27 +31,163 @@ export class MarketService {
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
 
-      return responses.map((response) => {
-        const { publicKey, account } = response;
-        return {
-          publicKey,
-          ...account,
-        };
-      }); // Add the closing parenthesis for map here and close the return
+      const marketsStats = await Promise.all(
+        responses.map(async (response) => {
+          const { publicKey, account } = response;
+          const marketStats = await this.marketStats(publicKey);
+
+          return {
+            publicKey,
+            ...account,
+            marketStats,
+          };
+        }),
+      );
+
+      return marketsStats;
     } catch (error) {
-      throw error;
+      console.error('Error fetching market stats:', error);
+      throw new InternalServerErrorException('Failed to fetch market stats');
     }
   }
-
 
   async getMarket(marketPublicKey: PublicKey) {
     try {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
+      const marketStats = await this.marketStats(marketPublicKey);
 
-      console.log({ marketAccount });
+      return { marketAccount, marketStats };
     } catch (error) {
+      throw error;
+    }
+  }
+
+  async marketStats(marketPublicKey: PublicKey) {
+    const marketAccount = (await program.account.marketAccount.fetch(
+      marketPublicKey,
+    )) as MarketAccount;
+    const voters = await program.account.bettingAccount.all();
+    const votersInMarket = voters.filter((voter) => {
+      return voter.account.marketKey.eq(marketAccount.marketKey);
+    });
+
+    const totalVolume = marketAccount.marketTotalTokens;
+    const [answerPDA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('answer'),
+        marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+      ],
+      program.programId,
+    );
+    const answerAccount = (await program.account.answerAccount.fetch(
+      answerPDA,
+    )) as unknown as AnswerAccount;
+
+    const answerStats = answerAccount.answers.map((answer) => {
+      const totalTokens = answer.answerTotalTokens.toNumber();
+      const totalVolumeNum = totalVolume.toNumber();
+
+      let percentage = 0;
+      if (totalVolumeNum > 0) {
+        percentage = (totalTokens / totalVolumeNum) * 100;
+      }
+      // Set a threshold for displaying small percentages
+      const displayPercentage =
+        percentage >= 1
+          ? percentage.toFixed(2)
+          : Math.floor(percentage).toString();
+
+      return {
+        name: answer.name,
+        totalTokens: answer.answerTotalTokens,
+        totalVolume,
+        percentage: displayPercentage,
+      };
+    });
+    return {
+      numVoters: votersInMarket.length,
+      totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+      answerStats,
+    };
+  }
+
+  async votersInMarket(marketPublicKey: PublicKey) {
+    try {
+      const marketAccount =
+        await program.account.marketAccount.fetch(marketPublicKey);
+      const voters = await program.account.bettingAccount.all();
+
+      const votersInMarket = voters.filter((voter) =>
+        voter.account.marketKey.eq(marketAccount.marketKey),
+      );
+
+      const result = votersInMarket.map((voter) => {
+        voter.account.createTime = new Date(
+          voter.account.createTime.toNumber() * 1000,
+        ).toUTCString();
+        voter.account.tokens =
+          voter.account.tokens.toNumber() / SOLANA_DECIMALS;
+
+        return voter;
+      });
+
+      return result;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        `failed to fetch voters in market ${marketPublicKey}`,
+      );
+    }
+  }
+
+  async placeBet(createBetDto: CreateBetDto, voter: PublicKey) {
+    const { marketKey, betAmount, answerKey } = createBetDto;
+
+    try {
+      const transaction = await program.methods
+        .bet(answerKey, betAmount)
+        .accounts({
+          voter: voter,
+          marketAccount: PublicKey.findProgramAddressSync(
+            [Buffer.from('market'), marketKey.toArrayLike(Buffer, 'le', 8)],
+            program.programId,
+          )[0],
+          vaultAccount: PublicKey.findProgramAddressSync(
+            [
+              Buffer.from('market_vault'),
+              marketKey.toArrayLike(Buffer, 'le', 8),
+            ],
+            program.programId,
+          )[0],
+          answerAccount: PublicKey.findProgramAddressSync(
+            [Buffer.from('answer'), marketKey.toArrayLike(Buffer, 'le', 8)],
+            program.programId,
+          )[0],
+          betAccount: PublicKey.findProgramAddressSync(
+            [
+              Buffer.from('betting'),
+              voter.toBuffer(),
+              marketKey.toArrayLike(Buffer, 'le', 8),
+              new BN(answerKey).toArrayLike(Buffer, 'le', 8),
+            ],
+            program.programId,
+          )[0],
+          systemProgram: SystemProgram.programId,
+        })
+        .transaction();
+
+      const { blockhash } = await connection.getLatestBlockhash();
+      transaction.recentBlockhash = blockhash;
+      transaction.feePayer = voter; //!!! voter != publickey ?
+
+      return {
+        transaction: transaction
+          .serialize({ requireAllSignatures: false })
+          .toString('base64'),
+      };
+    } catch (error) {
+      console.error('Error in placeBet: ', error);
       throw error;
     }
   }

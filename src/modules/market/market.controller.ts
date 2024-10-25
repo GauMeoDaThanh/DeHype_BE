@@ -8,11 +8,21 @@ import {
   Delete,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
-import { CreateMarketDto } from './dto/create-market.dto';
+import { CreateBetDto, CreateMarketDto } from './dto/create-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiInternalServerErrorResponse,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
+import { PublicKey } from '@solana/web3.js';
+import { Wallet } from 'src/decorators/current-wallet';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -21,7 +31,7 @@ export class MarketController {
 
   @Post()
   @Public()
-  @ApiOperation({ summary: 'Create a market transaction' })
+  @ApiOperation({ summary: 'create a market transaction' })
   @ApiResponse({
     status: 201,
     description: 'The market transaction has been successfully created.',
@@ -31,25 +41,50 @@ export class MarketController {
     return this.marketService.createMarketTransaction(createMarketDto);
   }
 
+  @ApiOperation({ summary: 'get all markets' })
+  @ApiInternalServerErrorResponse({
+    description: 'Failed to fetch market stats',
+  })
+  @ApiOkResponse()
   @Public()
   @Get()
   findAll() {
     return this.marketService.getMarkets();
-    // return this.marketService.findAll();
   }
 
+  @ApiOperation({ summary: 'get detail market' })
+  @ApiInternalServerErrorResponse({
+    description: 'Failed to fetch market stats',
+  })
+  @ApiOkResponse()
+  @Public()
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: PublicKey) {
     // return this.marketService.findOne(+id);
+    return this.marketService.getMarket(id);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMarketDto: UpdateMarketDto) {
-    // return this.marketService.update(+id, updateMarketDto);
+  @ApiOperation({ summary: 'get voters history' })
+  @ApiInternalServerErrorResponse({
+    description: 'Failed to fetch voters',
+  })
+  @ApiOkResponse()
+  @Public()
+  @Get(':id/voters')
+  votersInMarket(@Param('id') id: PublicKey) {
+    return this.marketService.votersInMarket(id);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    // return this.marketService.remove(+id);
+  @ApiOperation({ summary: 'place bet in market' })
+  @ApiBadRequestResponse({
+    description: 'Bad request',
+  })
+  @ApiCreatedResponse({
+    description: 'The betting transaction has been successfully created.',
+  })
+  @Public()
+  @Post('bet')
+  placeBet(createBetDto: CreateBetDto, @Wallet() voter: PublicKey) {
+    return this.marketService.placeBet(createBetDto, voter);
   }
 }
