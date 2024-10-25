@@ -20,3 +20,17 @@ export type MarketResponse = {
   publicKey: PublicKey;
   account: MarketAccount;
 };
+
+export type Answer = {
+  answerKey: BN; // Unique key for the answer
+  name: string; // Display name of the answer
+  answerTotalTokens: BN; // Total tokens associated with the answer
+  outcomeTokenName: string; // Name of the outcome token
+  outcomeTokenLogo: string; // URL of the outcome token logo
+};
+
+export type AnswerAccount = {
+  bump: number;
+  answers: Answer[];
+  marketKey: string;
+};

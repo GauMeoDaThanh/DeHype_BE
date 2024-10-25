@@ -17,7 +17,7 @@ export const connection = new Connection(
 const provider = new anchor.AnchorProvider(
   connection,
   anchor.Wallet.local(), // Assuming local wallet is used
-  { preflightCommitment: 'confirmed' }
+  { preflightCommitment: 'confirmed' },
 );
 anchor.setProvider(provider);
 
@@ -25,5 +25,7 @@ anchor.setProvider(provider);
 export const program = new Program(
   idl as Idl,
   new PublicKey('7fKSTrQLMk4K8svWTZ6dpD7mFVVfQdZ2TUb9MfqfAUWK'),
-  provider
+  provider,
 );
+
+export const SOLANA_DECIMALS = 1e9;

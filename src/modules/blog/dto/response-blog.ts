@@ -66,7 +66,7 @@ export class MetaDto {
 
 export class GetBlogResponse {
   @ApiProperty({ type: [BlogResultDto] })
-  comments: BlogResultDto[];
+  blogs: BlogResultDto[];
 
   @ApiProperty({ type: MetaDto })
   meta: MetaDto;
