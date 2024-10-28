@@ -19,6 +19,7 @@ import {
   ApiOkResponse,
   ApiCreatedResponse,
   ApiBadRequestResponse,
+  ApiParam,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
@@ -58,6 +59,7 @@ export class MarketController {
     description: 'Failed to fetch market stats',
   })
   @ApiOkResponse({ type: MarketDetailDto })
+  @ApiParam({ name: 'id', type: String, description: 'Public key of market' })
   @Public()
   @Get(':id')
   findOne(@Param('id') id: PublicKey) {
