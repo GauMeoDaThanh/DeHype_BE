@@ -14,6 +14,8 @@ import { MarketCommentModule } from './modules/market-comment/market-comment.mod
 import typeorm from './config/typeorm';
 import { BlogModule } from './modules/blog/blog.module';
 import { BlockUserModule } from './modules/block-user/block-user.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
   imports: [
@@ -25,6 +27,17 @@ import { BlockUserModule } from './modules/block-user/block-user.module';
       useFactory: async (configService: ConfigService) =>
         configService.get('typeorm'),
       inject: [ConfigService],
+    }),
+    CacheModule.registerAsync({
+      isGlobal: true,
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get<String>('REDIS_HOST'),
+        port: configService.get<Number>('REDIS_PORT'),
+        password: configService.get<String>('REDIS_PASSWORD'),
+        ttl: 60 * 5,
+      }),
     }),
     AuthModule,
     UserModule,
