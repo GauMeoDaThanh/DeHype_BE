@@ -3,7 +3,7 @@ import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { IsNotEmpty } from 'class-validator';
 
-export class CreateMarketDto {
+export class CreateMarketTransactionDto {
   @ApiProperty({ description: 'The name of the event' })
   eventName: string;
 
@@ -15,6 +15,12 @@ export class CreateMarketDto {
 
   @ApiProperty({ description: 'The public key of the user' })
   userPublicKey: string;
+}
+
+export class CreateMarketDto {
+  @IsNotEmpty()
+  @ApiProperty({ description: 'market puclic key' })
+  marketPublicKey: string;
 }
 
 export class CreateBetDto {

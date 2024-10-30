@@ -20,7 +20,7 @@ class AnswerStatsDto {
   percentage: string;
 }
 
-class MarketStatsDto {
+export class MarketStatsDto {
   @ApiProperty({ example: 2, description: 'Number of voters' })
   numVoters: number;
 
@@ -89,12 +89,6 @@ export class MarketDetailDto {
     description: 'URL of the cover image',
   })
   coverUrl: string;
-
-  @ApiProperty({
-    type: MarketStatsDto,
-    description: 'Statistics of the market, including answers and volume',
-  })
-  marketStats: MarketStatsDto;
 }
 
 class VoterAccountDto {

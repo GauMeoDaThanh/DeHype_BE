@@ -6,9 +6,14 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
-import { CreateBetDto, CreateMarketDto } from './dto/create-market.dto';
+import {
+  CreateBetDto,
+  CreateMarketDto,
+  CreateMarketTransactionDto,
+} from './dto/create-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
@@ -24,14 +29,19 @@ import {
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
 import { Wallet } from 'src/decorators/current-wallet';
-import { MarketDetailDto, VoterListDto } from './dto/market-detail.dto';
+import {
+  MarketDetailDto,
+  MarketStatsDto,
+  VoterListDto,
+} from './dto/market-detail.dto';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
 
-  @Post()
+  @Post('transaction')
   @Public()
   @ApiOperation({ summary: 'create a market transaction' })
   @ApiResponse({
@@ -39,13 +49,20 @@ export class MarketController {
     description: 'The market transaction has been successfully created.',
   })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  create(@Body() createMarketDto: CreateMarketDto) {
+  createMarketTransaction(@Body() createMarketDto: CreateMarketTransactionDto) {
     return this.marketService.createMarketTransaction(createMarketDto);
+  }
+
+  @ApiOperation({ summary: 'add market to database' })
+  @Public()
+  @Post()
+  create(@Body() createMarketDto: CreateMarketDto) {
+    return this.marketService.createMarket(createMarketDto);
   }
 
   @ApiOperation({ summary: 'get all markets' })
   @ApiInternalServerErrorResponse({
-    description: 'Failed to fetch market stats',
+    description: 'Failed to fetch markets',
   })
   @ApiOkResponse()
   @Public()
@@ -59,12 +76,27 @@ export class MarketController {
     description: 'Failed to fetch market stats',
   })
   @ApiOkResponse({ type: MarketDetailDto })
+  @ApiInternalServerErrorResponse({
+    description: 'Failed to fetch market info',
+  })
   @ApiParam({ name: 'id', type: String, description: 'Public key of market' })
   @Public()
   @Get(':id')
   findOne(@Param('id') id: PublicKey) {
-    // return this.marketService.findOne(+id);
     return this.marketService.getMarket(id);
+  }
+
+  @ApiOperation({ summary: 'get market stats' })
+  @ApiOkResponse({ type: MarketStatsDto })
+  @ApiParam({ name: 'id', type: String, description: 'Public key of market' })
+  @ApiInternalServerErrorResponse({
+    description: 'Failed to fetch market stats',
+  })
+  @UseInterceptors(CacheInterceptor)
+  @Public()
+  @Get(':id/stats')
+  marketStats(@Param('id') id: PublicKey) {
+    return this.marketService.marketStats(id);
   }
 
   @ApiOperation({ summary: 'get voters history' })
@@ -72,6 +104,7 @@ export class MarketController {
     description: 'Failed to fetch voters',
   })
   @ApiOkResponse({ type: VoterListDto })
+  @ApiParam({ name: 'id', type: String, description: 'Public key of market' })
   @Public()
   @Get(':id/voters')
   votersInMarket(@Param('id') id: PublicKey) {
