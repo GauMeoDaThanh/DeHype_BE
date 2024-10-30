@@ -40,6 +40,13 @@ import { Wallet } from 'src/decorators/current-wallet';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @ApiOperation({ summary: 'get all pending user - for dev only' })
+  @Public()
+  @Get('pending')
+  findAllPendingUser() {
+    return this.userService.findAllPendingUser();
+  }
+
   @Public()
   @Post()
   @ApiOperation({ summary: 'create user' })

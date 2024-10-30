@@ -116,6 +116,10 @@ export class UserService {
     return uploadResult;
   }
 
+  async findAllPendingUser() {
+    return await this.pendingUserRepository.find();
+  }
+
   async findAll(query: string) {
     const { filter, sort } = aqp(query);
     const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
