@@ -101,7 +101,7 @@ export class MarketService {
 
       return {
         name: answer.name,
-        totalTokens: answer.answerTotalTokens.toNumber() / SOLANA_DECIMALS,
+        totalTokens: answer.answerTotalTokens,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         percentage: displayPercentage,
       };
