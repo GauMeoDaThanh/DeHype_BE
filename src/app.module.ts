@@ -14,6 +14,7 @@ import { MarketCommentModule } from './modules/market-comment/market-comment.mod
 import typeorm from './config/typeorm';
 import { BlogModule } from './modules/blog/blog.module';
 import { BlockUserModule } from './modules/block-user/block-user.module';
+import { RedisCacheModule } from './modules/shared/cache/cache.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { BlockUserModule } from './modules/block-user/block-user.module';
         configService.get('typeorm'),
       inject: [ConfigService],
     }),
+    RedisCacheModule,
     AuthModule,
     UserModule,
     MarketModule,
@@ -44,4 +46,4 @@ import { BlockUserModule } from './modules/block-user/block-user.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
