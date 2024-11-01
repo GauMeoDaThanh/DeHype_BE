@@ -1,6 +1,7 @@
 import { Exclude } from 'class-transformer';
 import { BlockUser } from 'src/modules/block-user/entities/block-user.entity';
 import { Blog } from 'src/modules/blog/entities/blog.entity';
+import { FavMarket } from 'src/modules/fav-market/entities/fav-market.entity';
 import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
 import {
   BeforeInsert,
@@ -51,4 +52,7 @@ export class User {
 
   @OneToOne(() => BlockUser, (blockUser) => blockUser.user)
   blockUser: BlockUser;
+
+  @OneToMany(() => FavMarket, (favMarket) => favMarket.user)
+  favMarkets: FavMarket[];
 }

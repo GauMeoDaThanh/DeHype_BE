@@ -15,6 +15,7 @@ import typeorm from './config/typeorm';
 import { BlogModule } from './modules/blog/blog.module';
 import { BlockUserModule } from './modules/block-user/block-user.module';
 import { RedisCacheModule } from './modules/shared/cache/cache.module';
+import { FavMarketModule } from './modules/fav-market/fav-market.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { RedisCacheModule } from './modules/shared/cache/cache.module';
     MarketCommentModule,
     BlogModule,
     BlockUserModule,
+    FavMarketModule,
   ],
   controllers: [AppController],
   providers: [

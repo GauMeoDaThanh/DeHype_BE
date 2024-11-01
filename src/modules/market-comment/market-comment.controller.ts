@@ -15,7 +15,6 @@ import {
   ParamUpdateCommentDto,
   UpdateMarketCommentDto,
 } from './dto/update-market-comment.dto';
-import { CreateMarketDto } from '../market/dto/create-market.dto';
 import {
   CreateMarketCommentDto,
   ParamCreateReplyDto,

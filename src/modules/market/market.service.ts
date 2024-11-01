@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   Keypair,
   PublicKey,
@@ -8,6 +13,7 @@ import {
 import {
   CreateBetDto,
   CreateMarketDto,
+  CreateMarketTransactionDto,
   ResolveMarketDto,
 } from './dto/create-market.dto';
 import {
@@ -18,28 +24,44 @@ import {
 import { connection, program, SOLANA_DECIMALS } from 'src/constants';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { BN } from '@coral-xyz/anchor';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Market } from './entities/market.entity';
+import { Repository } from 'typeorm';
+import { CacheService } from '../shared/cache/cache.service';
 
 @Injectable()
 export class MarketService {
-  constructor() {
+  constructor(
+    @InjectRepository(Market)
+    private marketRepository: Repository<Market>,
+    private redisCacheService: CacheService,
+  ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
   }
 
   async getMarkets() {
     try {
+      // const { trending, category } = getMarketsDto;
+
+      const marketInfo = await this.marketRepository.find();
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
 
       const marketsStats = await Promise.all(
         responses.map(async (response) => {
           const { publicKey, account } = response;
-          const marketStats = await this.marketStats(publicKey);
+          // const marketStats = await this.marketStats(publicKey);
+          const market = marketInfo.find(
+            (market) => market.marketId === publicKey.toString(),
+          );
 
           return {
             publicKey,
             ...account,
-            marketStats,
+            // marketStats,
+            view: market.view,
+            like: market.like_count,
           };
         }),
       );
@@ -51,66 +73,91 @@ export class MarketService {
     }
   }
 
-  async getMarket(marketPublicKey: PublicKey) {
+  async getMarket(marketPublicKey: string) {
     try {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
-      const marketStats = await this.marketStats(marketPublicKey);
 
-      return { ...marketAccount, marketStats };
+      return { ...marketAccount };
     } catch (error) {
-      throw error;
+      console.log(error);
+      throw new InternalServerErrorException(
+        `failed to fetch info in market ${marketPublicKey}`,
+      );
     }
   }
 
   async marketStats(marketPublicKey: PublicKey) {
-    const marketAccount = (await program.account.marketAccount.fetch(
-      marketPublicKey,
-    )) as MarketAccount;
-    const voters = await program.account.bettingAccount.all();
-    const votersInMarket = voters.filter((voter) => {
-      return voter.account.marketKey.eq(marketAccount.marketKey);
-    });
+    try {
+      const marketStats = await this.redisCacheService.get(
+        `${marketPublicKey}/marketstats`,
+      );
+      if (marketStats) return marketStats;
 
-    const totalVolume = marketAccount.marketTotalTokens;
-    const [answerPDA] = PublicKey.findProgramAddressSync(
-      [
-        Buffer.from('answer'),
-        marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
-      ],
-      program.programId,
-    );
-    const answerAccount = (await program.account.answerAccount.fetch(
-      answerPDA,
-    )) as unknown as AnswerAccount;
+      const marketAccount = (await program.account.marketAccount.fetch(
+        marketPublicKey,
+      )) as MarketAccount;
+      const voters = await program.account.bettingAccount.all();
+      const votersInMarket = voters.filter((voter) => {
+        return voter.account.marketKey.eq(marketAccount.marketKey);
+      });
 
-    const answerStats = answerAccount.answers.map((answer) => {
-      const totalTokens = answer.answerTotalTokens.toNumber();
-      const totalVolumeNum = totalVolume.toNumber();
+      const totalVolume = marketAccount.marketTotalTokens;
+      const [answerPDA] = PublicKey.findProgramAddressSync(
+        [
+          Buffer.from('answer'),
+          marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+        ],
+        program.programId,
+      );
+      const answerAccount = (await program.account.answerAccount.fetch(
+        answerPDA,
+      )) as unknown as AnswerAccount;
 
-      let percentage = 0;
-      if (totalVolumeNum > 0) {
-        percentage = (totalTokens / totalVolumeNum) * 100;
-      }
-      // Set a threshold for displaying small percentages
-      const displayPercentage =
-        percentage >= 1
-          ? percentage.toFixed(2)
-          : Math.floor(percentage).toString();
+      const answerStats = answerAccount.answers.map((answer) => {
+        const totalTokens = answer.answerTotalTokens.toNumber();
+        const totalVolumeNum = totalVolume.toNumber();
+
+        let percentage = 0;
+        if (totalVolumeNum > 0) {
+          percentage = (totalTokens / totalVolumeNum) * 100;
+        }
+        // Set a threshold for displaying small percentages
+        const displayPercentage =
+          percentage >= 1
+            ? percentage.toFixed(2)
+            : Math.floor(percentage).toString();
+
+        return {
+          name: answer.name,
+          totalTokens: answer.answerTotalTokens,
+          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+          percentage: displayPercentage,
+        };
+      });
+
+      this.redisCacheService.set(
+        `${marketPublicKey}/marketstats`,
+        {
+          numVoters: votersInMarket.length,
+          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+          answerStats,
+        },
+        { ttl: 60 * 10 } as any,
+      );
 
       return {
-        name: answer.name,
-        totalTokens: answer.answerTotalTokens.toNumber() / SOLANA_DECIMALS,
+        numVoters: votersInMarket.length,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-        percentage: displayPercentage,
+        answerStats,
       };
-    });
-    return {
-      numVoters: votersInMarket.length,
-      totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-      answerStats,
-    };
+    } catch (error) {
+      console.error('Error:', error);
+      throw new InternalServerErrorException(
+        `failed to fetch stats in market ${marketPublicKey}`,
+      );
+    }
   }
 
   async votersInMarket(marketPublicKey: PublicKey) {
@@ -208,7 +255,7 @@ export class MarketService {
   }
 
   async createMarketTransaction(
-    createMarketDto: CreateMarketDto,
+    createMarketDto: CreateMarketTransactionDto,
   ): Promise<{ transaction: string }> {
     try {
       const { eventName, outcomeOptions, userPublicKey } = createMarketDto;
@@ -243,6 +290,15 @@ export class MarketService {
     }
   }
 
+  async createMarket(createMarketDto: CreateMarketDto) {
+    const { marketPublicKey } = createMarketDto;
+
+    const marketInfo = this.marketRepository.create({
+      marketId: marketPublicKey,
+    });
+    return await this.marketRepository.save(marketInfo);
+  }
+
   async resolveMarket(resolveMarketDto: ResolveMarketDto): Promise<string> {
     const { marketAddress, winningOutcome, userPublicKey } = resolveMarketDto;
     try {
@@ -263,5 +319,28 @@ export class MarketService {
       console.error('Error resolving market:', error);
       throw new InternalServerErrorException('Failed to resolve market');
     }
+  }
+
+  async updateMarketLike(marketPubKey: string, isLike: boolean = false) {
+    const marketInfo = await this.marketRepository.findOne({
+      where: { marketId: marketPubKey },
+    });
+    if (!marketInfo)
+      throw new NotFoundException(
+        `Fail to fetch market with id ${marketPubKey}`,
+      );
+
+    if (isLike) {
+      marketInfo.like_count += 1;
+    } else {
+      marketInfo.like_count -= 1;
+    }
+    return await this.marketRepository.save(marketInfo);
+  }
+
+  addMarketView(marketPubKey: string) {
+    this.marketRepository.update(marketPubKey, {
+      view: () => 'view + 1',
+    });
   }
 }

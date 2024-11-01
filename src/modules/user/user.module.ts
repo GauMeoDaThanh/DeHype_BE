@@ -5,9 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { PendingUser } from './entities/pendingUser.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { MarketModule } from '../market/market.module';
+import { FavMarketModule } from '../fav-market/fav-market.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, PendingUser]), CloudinaryModule],
+  imports: [
+    TypeOrmModule.forFeature([User, PendingUser]),
+    CloudinaryModule,
+    FavMarketModule,
+  ],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],
