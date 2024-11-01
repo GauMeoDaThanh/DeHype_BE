@@ -71,7 +71,7 @@ jobs:
           ls -la ~/.ssh
 
           echo "Creating destination directory on EC2"
-          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/ec2-user/${{ vars.app_name }}/dist"
+          ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} "mkdir -p /home/${{ vars.ec2_user }}/${{ vars.app_name }}/dist"
 
           echo "${{ secrets.ENCODED_ENV }}" | base64 --decode > .env
 
@@ -83,7 +83,7 @@ jobs:
           fi
 
           echo "Attempting SCP transfer of all files"
-          scp -v -i ~/.ssh/id_rsa -r ./* ./.env ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/ec2-user/${{ vars.app_name }}/dist
+          scp -v -i ~/.ssh/id_rsa -r ./* ./.env ${{ vars.ec2_user }}@${{ vars.ec2_ip }}:/home/${{ vars.ec2_user }}/${{ vars.app_name }}/dist
 
           if [ $? -eq 0 ]; then
             echo "SCP transfer completed successfully"
@@ -95,14 +95,14 @@ jobs:
           echo "Verifying transferred files"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
             echo "Contents of app directory on EC2:"
-            ls -R /home/ec2-user/${{ vars.app_name }}
+            ls -R /home/${{ vars.ec2_user }}/${{ vars.app_name }}
           EOF
 
           echo "Continuing with deployment"
           ssh -i ~/.ssh/id_rsa ${{ vars.ec2_user }}@${{ vars.ec2_ip }} << 'EOF'
-            cd /home/ec2-user/${{ vars.app_name }}
+            cd /home/${{ vars.ec2_user }}/${{ vars.app_name }}
             cp wallet.json ./dist/
-            cd /home/ec2-user/${{ vars.app_name }}/dist
+            cd /home/${{ vars.ec2_user }}/${{ vars.app_name }}/dist
             rm -rf node_modules 
             echo "Installing dependencies..."
             yarn install || { echo "Failed to install dependencies"; exit 1; }
