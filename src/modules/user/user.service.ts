@@ -19,6 +19,8 @@ import {
   MetaDto,
   UserResultDto,
 } from './dto/response-user.dto';
+import { MarketService } from '../market/market.service';
+import { FavMarketService } from '../fav-market/fav-market.service';
 
 @Injectable()
 export class UserService {
@@ -28,6 +30,7 @@ export class UserService {
     @InjectRepository(PendingUser)
     private pendingUserRepository: Repository<PendingUser>,
     private cloudinaryService: CloudinaryService,
+    private favMarketService: FavMarketService,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
@@ -116,6 +119,10 @@ export class UserService {
     return uploadResult;
   }
 
+  async findAllPendingUser() {
+    return await this.pendingUserRepository.find();
+  }
+
   async findAll(query: string) {
     const { filter, sort } = aqp(query);
     const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
@@ -181,7 +188,10 @@ export class UserService {
     }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async getUserLikedMarkets(walletAddress: string, query: string) {
+    const user = await this.getUser(walletAddress);
+    if (!user) throw new NotFoundException(`Can't find user ${walletAddress}`);
+
+    return await this.favMarketService.getAllLikedMarket(walletAddress, query);
   }
 }
