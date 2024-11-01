@@ -31,7 +31,7 @@ export class FavMarketController {
   @ApiCreatedResponse()
   @ApiInternalServerErrorResponse()
   @Post(':id/like')
-  addMarketLike(@Param('id') id: string, @Wallet() walletAddress: string) {
+  AddMarketToFavorties(@Param('id') id: string, @Wallet() walletAddress: string) {
     return this.favMarketService.addFavMarket(id, walletAddress);
   }
 
@@ -40,7 +40,7 @@ export class FavMarketController {
   @ApiOkResponse()
   @ApiInternalServerErrorResponse()
   @Delete(':id/unlike')
-  removeMarketLike(@Param('id') id: string, @Wallet() walletAddress: string) {
+  RemoveMarketFromFavorites(@Param('id') id: string, @Wallet() walletAddress: string) {
     return this.favMarketService.removeFavMarket(id, walletAddress);
   }
 }
