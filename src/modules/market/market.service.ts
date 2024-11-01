@@ -27,12 +27,14 @@ import { BN } from '@coral-xyz/anchor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Market } from './entities/market.entity';
 import { Repository } from 'typeorm';
+import { CacheService } from '../shared/cache/cache.service';
 
 @Injectable()
 export class MarketService {
   constructor(
     @InjectRepository(Market)
     private marketRepository: Repository<Market>,
+    private redisCacheService: CacheService,
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
@@ -88,6 +90,11 @@ export class MarketService {
 
   async marketStats(marketPublicKey: PublicKey) {
     try {
+      const marketStats = await this.redisCacheService.get(
+        `${marketPublicKey}/marketstats`,
+      );
+      if (marketStats) return marketStats;
+
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
@@ -129,6 +136,16 @@ export class MarketService {
           percentage: displayPercentage,
         };
       });
+
+      this.redisCacheService.set(
+        `${marketPublicKey}/marketstats`,
+        {
+          numVoters: votersInMarket.length,
+          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+          answerStats,
+        },
+      );
+
       return {
         numVoters: votersInMarket.length,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
