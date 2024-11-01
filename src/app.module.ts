@@ -15,6 +15,7 @@ import typeorm from './config/typeorm';
 import { BlogModule } from './modules/blog/blog.module';
 import { BlockUserModule } from './modules/block-user/block-user.module';
 import { CacheModule } from '@nestjs/cache-manager';
+import { FavMarketModule } from './modules/fav-market/fav-market.module';
 import * as redisStore from 'cache-manager-redis-store';
 
 @Module({
@@ -33,9 +34,10 @@ import * as redisStore from 'cache-manager-redis-store';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         store: redisStore,
-        host: configService.get<String>('REDIS_HOST'),
-        port: configService.get<Number>('REDIS_PORT'),
-        password: configService.get<String>('REDIS_PASSWORD'),
+        url: configService.get<String>('REDIS_URL'),
+        // host: configService.get<String>('REDIS_HOST'),
+        // port: configService.get<Number>('REDIS_PORT'),
+        // password: configService.get<String>('REDIS_PASSWORD'),
         ttl: 60 * 5,
       }),
     }),
@@ -47,6 +49,7 @@ import * as redisStore from 'cache-manager-redis-store';
     MarketCommentModule,
     BlogModule,
     BlockUserModule,
+    FavMarketModule,
   ],
   controllers: [AppController],
   providers: [

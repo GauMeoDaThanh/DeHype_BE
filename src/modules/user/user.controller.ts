@@ -23,6 +23,7 @@ import {
   ApiConsumes,
   ApiExcludeEndpoint,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -34,6 +35,7 @@ import { Tag } from 'src/constants/api-tag.enum';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
 import { GetUserReponse } from './dto/response-user.dto';
 import { Wallet } from 'src/decorators/current-wallet';
+import { MarketDetailDto } from '../market/dto/market-detail.dto';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -45,6 +47,24 @@ export class UserController {
   @Get('pending')
   findAllPendingUser() {
     return this.userService.findAllPendingUser();
+  }
+
+  @ApiOperation({ summary: 'Get favourite market of user' })
+  @ApiInternalServerErrorResponse()
+  @ApiNotFoundResponse({
+    description: "Can't find the info of wallet address in system",
+  })
+  @ApiOkResponse({ type: MarketDetailDto })
+  @ApiQuery({ name: 'current', required: false, description: 'Current page' })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    description: 'Number of record each page',
+  })
+  @Public()
+  @Get(':id/favmarket')
+  UserLikedMarket(@Query() query: string, @Param('id') walletAddress: string) {
+    return this.userService.getUserLikedMarkets(walletAddress, query);
   }
 
   @Public()
@@ -126,20 +146,9 @@ export class UserController {
     return this.userService.update(walletAddress, updateUserDto);
   }
 
-  @ApiExcludeEndpoint()
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
-  }
-
   // @ApiBearerAuth()
   @ApiOperation({ summary: 'get all users information' })
   @ApiOkResponse({ type: GetUserReponse })
-  @ApiQuery({
-    name: 'pageSize',
-    required: false,
-    description: 'Number of record each page',
-  })
   @ApiQuery({ name: 'current', required: false, description: 'Current page' })
   @ApiQuery({
     name: 'pageSize',
@@ -149,7 +158,7 @@ export class UserController {
   @ApiQuery({
     name: 'sort',
     required: false,
-    description: 'Current page',
+    description: 'sort by',
     example: '-createdAt',
   })
   @Public()

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   Keypair,
@@ -13,6 +14,7 @@ import {
   CreateBetDto,
   CreateMarketDto,
   CreateMarketTransactionDto,
+  GetMarketsDto,
   ResolveMarketDto,
 } from './dto/create-market.dto';
 import {
@@ -37,8 +39,10 @@ export class MarketService {
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
   }
 
-  async getMarkets() {
+  async getMarkets(getMarketsDto: GetMarketsDto) {
     try {
+      const { trending, category } = getMarketsDto;
+
       const marketInfo = await this.marketRepository.find();
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
@@ -47,7 +51,7 @@ export class MarketService {
         responses.map(async (response) => {
           const { publicKey, account } = response;
           // const marketStats = await this.marketStats(publicKey);
-          const marketView = marketInfo.find(
+          const market = marketInfo.find(
             (market) => market.marketId === publicKey.toString(),
           );
 
@@ -55,7 +59,8 @@ export class MarketService {
             publicKey,
             ...account,
             // marketStats,
-            view: marketView.view,
+            view: market.view,
+            like: market.like_count,
           };
         }),
       );
@@ -67,7 +72,7 @@ export class MarketService {
     }
   }
 
-  async getMarket(marketPublicKey: PublicKey) {
+  async getMarket(marketPublicKey: string) {
     try {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
@@ -297,5 +302,28 @@ export class MarketService {
       console.error('Error resolving market:', error);
       throw new InternalServerErrorException('Failed to resolve market');
     }
+  }
+
+  async adjustMarketLike(marketPubKey: string, isLike: boolean = false) {
+    const marketInfo = await this.marketRepository.findOne({
+      where: { marketId: marketPubKey },
+    });
+    if (!marketInfo)
+      throw new NotFoundException(
+        `Fail to fetch market with id ${marketPubKey}`,
+      );
+
+    if (isLike) {
+      marketInfo.like_count += 1;
+    } else {
+      marketInfo.like_count -= 1;
+    }
+    return await this.marketRepository.save(marketInfo);
+  }
+
+  addMarketView(marketPubKey: string) {
+    this.marketRepository.update(marketPubKey, {
+      view: () => 'view + 1',
+    });
   }
 }

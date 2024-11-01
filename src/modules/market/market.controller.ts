@@ -13,6 +13,7 @@ import {
   CreateBetDto,
   CreateMarketDto,
   CreateMarketTransactionDto,
+  GetMarketsDto,
 } from './dto/create-market.dto';
 import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
@@ -67,8 +68,8 @@ export class MarketController {
   @ApiOkResponse()
   @Public()
   @Get()
-  findAll() {
-    return this.marketService.getMarkets();
+  findAll(@Body() getMarketsDto: GetMarketsDto) {
+    return this.marketService.getMarkets(getMarketsDto);
   }
 
   @ApiOperation({ summary: 'get detail market' })
@@ -83,7 +84,7 @@ export class MarketController {
   @Public()
   @Get(':id')
   findOne(@Param('id') id: PublicKey) {
-    return this.marketService.getMarket(id);
+    return this.marketService.getMarket(id.toString());
   }
 
   @ApiOperation({ summary: 'get market stats' })
@@ -122,5 +123,14 @@ export class MarketController {
   @Post('bet')
   placeBet(createBetDto: CreateBetDto, @Wallet() voter: PublicKey) {
     return this.marketService.placeBet(createBetDto, voter);
+  }
+
+  @ApiOperation({ summary: 'up view for market' })
+  @ApiInternalServerErrorResponse()
+  @ApiCreatedResponse()
+  @Public()
+  @Post(':id/view')
+  addMarketView(@Param('id') id: string) {
+    return this.marketService.addMarketView(id);
   }
 }

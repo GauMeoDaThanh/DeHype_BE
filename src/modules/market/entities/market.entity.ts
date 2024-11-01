@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity,PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Market {
@@ -7,4 +7,7 @@ export class Market {
 
   @Column('int4', { default: 0 })
   view: number;
+
+  @Column({ default: 0 })
+  like_count: number;
 }
