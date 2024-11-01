@@ -1,10 +1,10 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import { CacheManagerStore } from 'cache-manager';
+import { Store } from 'cache-manager';
 
 @Injectable()
 export class CacheService {
-    constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: CacheManagerStore) { }
+    constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: Store) { }
 
     // Set a value in the cache with a specified key and TTL
     async set<T>(key: string, value: T, ttl: number): Promise<void> {
