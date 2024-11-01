@@ -23,7 +23,7 @@ export class FavMarketService {
         market: { marketId: marketPubKey },
       });
       this.favMarketRepository.save(favMarket);
-      return await this.marketService.adjustMarketLike(marketPubKey, true);
+      return await this.marketService.updateMarketLike(marketPubKey, true);
     } catch (error) {
       throw new InternalServerErrorException('Error in add favourite market');
     }
@@ -35,7 +35,7 @@ export class FavMarketService {
         user: { walletAddress: walletAddress },
         market: { marketId: marketPubKey },
       });
-      return await this.marketService.adjustMarketLike(marketPubKey);
+      return await this.marketService.updateMarketLike(marketPubKey);
     } catch (error) {
       throw new InternalServerErrorException(
         'Error in remove favourite market',

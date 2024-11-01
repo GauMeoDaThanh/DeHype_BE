@@ -144,6 +144,7 @@ export class MarketService {
           totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
           answerStats,
         },
+        { ttl: 60 * 10 } as any,
       );
 
       return {
@@ -320,7 +321,7 @@ export class MarketService {
     }
   }
 
-  async adjustMarketLike(marketPubKey: string, isLike: boolean = false) {
+  async updateMarketLike(marketPubKey: string, isLike: boolean = false) {
     const marketInfo = await this.marketRepository.findOne({
       where: { marketId: marketPubKey },
     });
