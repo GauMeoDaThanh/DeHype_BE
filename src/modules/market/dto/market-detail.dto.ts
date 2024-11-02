@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, ArrayMinSize, IsString, IsNotEmpty } from 'class-validator';
 
 class AnswerStatsDto {
   @ApiProperty({ example: 'Yes' })
@@ -146,4 +147,19 @@ export class VoterListDto {
     description: 'List of voters in the market',
   })
   voters: VoterDto[];
+}
+
+
+export class GetMarketsStatsDto {
+  @ApiProperty({
+    description: 'Array of market public keys',
+    type: [String],
+    example: ['market1pubkey', 'market2pubkey'],
+    isArray: true
+  })
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  marketIds: string[];
 }

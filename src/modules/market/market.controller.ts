@@ -14,7 +14,6 @@ import {
   CreateMarketDto,
   CreateMarketTransactionDto,
 } from './dto/create-market.dto';
-import { UpdateMarketDto } from './dto/update-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
   ApiTags,
@@ -30,6 +29,7 @@ import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
 import { Wallet } from 'src/decorators/current-wallet';
 import {
+  GetMarketsStatsDto,
   MarketDetailDto,
   MarketStatsDto,
   VoterListDto,
@@ -39,7 +39,7 @@ import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 @ApiTags(Tag.MARKET)
 @Controller('markets')
 export class MarketController {
-  constructor(private readonly marketService: MarketService) {}
+  constructor(private readonly marketService: MarketService) { }
 
   @Post('transaction')
   @Public()
@@ -130,5 +130,20 @@ export class MarketController {
   @Post(':id/view')
   addMarketView(@Param('id') id: string) {
     return this.marketService.addMarketView(id);
+  }
+
+
+  @ApiOperation({
+    summary: 'Get stats for multiple markets',
+    description: 'Fetches participation, liquidity and answer statistics for multiple markets'
+  })
+  @ApiOkResponse({
+    description: 'Market stats retrieved successfully',
+    type: Object
+  })
+  @Public()
+  @Post('stats')
+  async getMarketsStat(@Body() dto: GetMarketsStatsDto) {
+    return this.marketService.getBatchMarketStats(dto.marketIds);
   }
 }
