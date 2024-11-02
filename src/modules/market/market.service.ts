@@ -88,6 +88,85 @@ export class MarketService {
     }
   }
 
+  async getBatchMarketStats(marketIds: string[]) {
+    try {
+      const uniqueIds = [...new Set(marketIds)];
+      const results: { [key: string]: any } = {};
+
+      // First check cache for existing stats
+      const cachedResults = await Promise.all(
+        uniqueIds.map(async (marketId) => {
+          const cached = await this.redisCacheService.get(
+            `${marketId}/marketstats`
+          );
+          return { marketId, cached };
+        })
+      );
+
+      // Separate IDs that need fetching from cache hits
+      const cachedIds = new Set(
+        cachedResults
+          .filter(({ cached }) => cached)
+          .map(({ marketId }) => marketId)
+      );
+
+      // Add cached results to response
+      cachedResults.forEach(({ marketId, cached }) => {
+        if (cached) {
+          results[marketId] = cached;
+        }
+      });
+
+      // Fetch remaining markets in batches
+      const remainingIds = uniqueIds.filter(id => !cachedIds.has(id));
+      const batchSize = 5;
+
+      for (let i = 0; i < remainingIds.length; i += batchSize) {
+        const batch = remainingIds.slice(i, i + batchSize);
+        const batchPromises = batch.map(async (marketId) => {
+          try {
+            const stats = await this.marketStats(new PublicKey(marketId));
+            return { marketId, stats };
+          } catch (error) {
+            console.error(`Error fetching stats for market ${marketId}:`, error);
+            return {
+              marketId,
+              error: 'Failed to fetch market stats'
+            };
+          }
+        });
+
+        const batchResults = await Promise.all(batchPromises);
+
+        // Add batch results to final results
+        batchResults.forEach(({ marketId, stats, error }) => {
+          results[marketId] = error ? { error } : stats;
+
+          // Cache successful results
+          if (!error) {
+            this.redisCacheService.set(
+              `${marketId}/marketstats`,
+              stats,
+              { ttl: 60 * 10 } as any // 10 minutes TTL
+            );
+          }
+        });
+      }
+
+      // Format response to match frontend expectations
+      return uniqueIds.map(marketId => ({
+        marketId: new PublicKey(marketId),
+        participants: results[marketId]?.numVoters || 0,
+        liquidity: results[marketId]?.totalVolume || 0,
+        answerStats: results[marketId]?.answerStats || []
+      }));
+
+    } catch (error) {
+      console.error('Error in batch market stats:', error);
+      throw new InternalServerErrorException('Failed to fetch batch market stats');
+    }
+  }
+
   async marketStats(marketPublicKey: PublicKey) {
     try {
       const marketStats = await this.redisCacheService.get(

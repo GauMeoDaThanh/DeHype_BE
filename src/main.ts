@@ -10,7 +10,11 @@ async function bootstrap() {
   const port = configServer.get('PORT') || 8080;
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
   );
 
   app.setGlobalPrefix('api/v1', { exclude: [''] });
