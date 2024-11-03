@@ -18,7 +18,11 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api/v1', { exclude: [''] });
-  app.enableCors();
+  app.enableCors({
+    origin: 'https://dehype.fun', // Replace with your frontend's domain
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // If you need to send cookies or authorization headers
+  });
 
   const config = new DocumentBuilder()
     .addBearerAuth()
