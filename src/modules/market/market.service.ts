@@ -169,7 +169,7 @@ export class MarketService {
 
   async marketStats(marketPublicKey: PublicKey) {
     try {
-      const marketStats = await this.redisCacheService.get(
+      let marketStats = await this.redisCacheService.get(
         `${marketPublicKey}/marketstats`,
       );
       if (marketStats) return marketStats;
@@ -216,21 +216,19 @@ export class MarketService {
         };
       });
 
-      this.redisCacheService.set(
-        `${marketPublicKey}/marketstats`,
-        {
-          participants: votersInMarket.length,
-          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-          answerStats,
-        },
-        { ttl: 60 * 10 } as any,
-      );
-
-      return {
+      marketStats = {
+        publicKey: marketPublicKey,
         participants: votersInMarket.length,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         answerStats,
-      };
+      }
+      this.redisCacheService.set(
+        `${marketPublicKey}/marketstats`,
+        marketStats,
+        { ttl: 60 * 10 } as any,
+      );
+
+      return marketStats;
     } catch (error) {
       console.error('Error:', error);
       throw new InternalServerErrorException(
