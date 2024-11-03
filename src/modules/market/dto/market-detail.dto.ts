@@ -22,6 +22,11 @@ class AnswerStatsDto {
 }
 
 export class MarketStatsDto {
+  @ApiProperty({
+    example: 'EE5GY3PzUSM8mewPazm',
+    description: 'Public key of the voter',
+  })
+  publicKey: string;
   @ApiProperty({ example: 2, description: 'Number of voters' })
   participants: number;
 
