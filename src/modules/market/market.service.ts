@@ -155,7 +155,7 @@ export class MarketService {
 
       // Format response to match frontend expectations
       return uniqueIds.map(marketId => ({
-        marketId: new PublicKey(marketId),
+        marketId,
         participants: results[marketId]?.participants || 0,
         totalVolume: results[marketId]?.totalVolume || 0,
         answerStats: results[marketId]?.answerStats || []
@@ -209,6 +209,7 @@ export class MarketService {
             : Math.floor(percentage).toString();
 
         return {
+          publicKey: marketPublicKey,
           name: answer.name,
           key: answer.answerKey,
           totalTokens: answer.answerTotalTokens,
@@ -218,7 +219,7 @@ export class MarketService {
       });
 
       marketStats = {
-        publicKey: marketPublicKey,
+        marketId: marketPublicKey,
         participants: votersInMarket.length,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         answerStats,
