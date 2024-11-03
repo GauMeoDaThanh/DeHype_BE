@@ -18,17 +18,26 @@ async function bootstrap() {
   );
 
   app.setGlobalPrefix('api/v1', { exclude: [''] });
-  app.enableCors({
-    origin: (origin, callback) => {
-      if (origin === 'https://dehype.fun' || origin === 'https://www.dehype.fun') {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-    credentials: true,
-  });
+  // const allowedOrigins = [
+  //   'https://dehype.fun',
+  //   'https://www.dehype.fun',
+  //   // Add any other allowed origins here
+  // ];
+
+  // app.enableCors({
+  //   origin: (origin, callback) => {
+  //     // Allow requests with no origin (like mobile apps or curl requests)
+  //     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+  //       callback(null, true);
+  //     } else {
+  //       callback(new Error('Not allowed by CORS'));
+  //     }
+  //   },
+  //   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  //   credentials: true,
+  // });
+
+  app.enableCors();
 
   const config = new DocumentBuilder()
     .addBearerAuth()
