@@ -23,7 +23,7 @@ class AnswerStatsDto {
 
 export class MarketStatsDto {
   @ApiProperty({ example: 2, description: 'Number of voters' })
-  numVoters: number;
+  participants: number;
 
   @ApiProperty({ example: 31.01, description: 'Total volume of the market' })
   totalVolume: number;

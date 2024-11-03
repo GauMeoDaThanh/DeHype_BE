@@ -156,8 +156,8 @@ export class MarketService {
       // Format response to match frontend expectations
       return uniqueIds.map(marketId => ({
         marketId: new PublicKey(marketId),
-        participants: results[marketId]?.numVoters || 0,
-        liquidity: results[marketId]?.totalVolume || 0,
+        participants: results[marketId]?.participants || 0,
+        volume: results[marketId]?.totalVolume || 0,
         answerStats: results[marketId]?.answerStats || []
       }));
 
@@ -219,7 +219,7 @@ export class MarketService {
       this.redisCacheService.set(
         `${marketPublicKey}/marketstats`,
         {
-          numVoters: votersInMarket.length,
+          participants: votersInMarket.length,
           totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
           answerStats,
         },
@@ -227,7 +227,7 @@ export class MarketService {
       );
 
       return {
-        numVoters: votersInMarket.length,
+        participants: votersInMarket.length,
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         answerStats,
       };
