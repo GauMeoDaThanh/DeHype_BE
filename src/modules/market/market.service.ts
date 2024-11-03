@@ -157,7 +157,7 @@ export class MarketService {
       return uniqueIds.map(marketId => ({
         marketId: new PublicKey(marketId),
         participants: results[marketId]?.participants || 0,
-        volume: results[marketId]?.totalVolume || 0,
+        totalVolume: results[marketId]?.totalVolume || 0,
         answerStats: results[marketId]?.answerStats || []
       }));
 
