@@ -35,3 +35,18 @@ export type AnswerAccount = {
   answers: Answer[];
   marketKey: string;
 };
+
+export type BettingAccount = {
+  bump: number;
+  marketKey: BN;
+  answerKey: BN;
+  voter: PublicKey;
+  tokens: BN;
+  createTime: BN;
+  exist: boolean;
+};
+
+export type BettingAccountResponse = {
+  publicKey: PublicKey;
+  account: BettingAccount;
+};

@@ -18,6 +18,7 @@ import {
 } from './dto/create-market.dto';
 import {
   AnswerAccount,
+  BettingAccountResponse,
   MarketAccount,
   MarketResponse,
 } from './dto/response-market.dto';
@@ -47,26 +48,44 @@ export class MarketService {
       const marketInfo = await this.marketRepository.find();
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
+      const voters = (await this.getAllVoters()) as BettingAccountResponse[];
 
       const marketsStats = await Promise.all(
         responses.map(async (response) => {
           const { publicKey, account } = response;
-          // const marketStats = await this.marketStats(publicKey);
+
           const market = marketInfo.find(
             (market) => market.marketId === publicKey.toString(),
           );
 
+          const votersInMarket = voters.filter((voter) => {
+            const marketKey = new BN(voter.account.marketKey, 16);
+            return marketKey.eq(account.marketKey);
+          });
+
           return {
             publicKey,
             ...account,
-            // marketStats,
             view: market.view,
             like: market.like_count,
+            createdAt: market.createdAt,
+            totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
+            participants: votersInMarket.length,
           };
         }),
       );
 
-      return marketsStats;
+      // return marketsStats;
+
+      // Return according to trending
+      return marketsStats.sort((a, b): number => {
+        return (
+          b.participants - a.participants ||
+          b.totalVolume - a.totalVolume ||
+          b.like - a.like ||
+          b.view - a.view
+        );
+      });
     } catch (error) {
       console.error('Error fetching market stats:', error);
       throw new InternalServerErrorException('Failed to fetch market stats');
@@ -97,17 +116,17 @@ export class MarketService {
       const cachedResults = await Promise.all(
         uniqueIds.map(async (marketId) => {
           const cached = await this.redisCacheService.get(
-            `${marketId}/marketstats`
+            `${marketId}/marketstats`,
           );
           return { marketId, cached };
-        })
+        }),
       );
 
       // Separate IDs that need fetching from cache hits
       const cachedIds = new Set(
         cachedResults
           .filter(({ cached }) => cached)
-          .map(({ marketId }) => marketId)
+          .map(({ marketId }) => marketId),
       );
 
       // Add cached results to response
@@ -118,7 +137,7 @@ export class MarketService {
       });
 
       // Fetch remaining markets in batches
-      const remainingIds = uniqueIds.filter(id => !cachedIds.has(id));
+      const remainingIds = uniqueIds.filter((id) => !cachedIds.has(id));
       const batchSize = 5;
 
       for (let i = 0; i < remainingIds.length; i += batchSize) {
@@ -128,10 +147,13 @@ export class MarketService {
             const stats = await this.marketStats(new PublicKey(marketId));
             return { marketId, stats };
           } catch (error) {
-            console.error(`Error fetching stats for market ${marketId}:`, error);
+            console.error(
+              `Error fetching stats for market ${marketId}:`,
+              error,
+            );
             return {
               marketId,
-              error: 'Failed to fetch market stats'
+              error: 'Failed to fetch market stats',
             };
           }
         });
@@ -147,24 +169,33 @@ export class MarketService {
             this.redisCacheService.set(
               `${marketId}/marketstats`,
               stats,
-              { ttl: 60 * 10 } as any // 10 minutes TTL
+              { ttl: 60 * 10 } as any, // 10 minutes TTL
             );
           }
         });
       }
 
       // Format response to match frontend expectations
-      return uniqueIds.map(marketId => ({
+      return uniqueIds.map((marketId) => ({
         marketId,
-        participants: results[marketId]?.participants || 0,
-        totalVolume: results[marketId]?.totalVolume || 0,
-        answerStats: results[marketId]?.answerStats || []
+        answerStats: results[marketId]?.answerStats || [],
       }));
-
     } catch (error) {
       console.error('Error in batch market stats:', error);
-      throw new InternalServerErrorException('Failed to fetch batch market stats');
+      throw new InternalServerErrorException(
+        'Failed to fetch batch market stats',
+      );
     }
+  }
+  async getAllVoters() {
+    const allVoters = await this.redisCacheService.get('all_voters');
+    if (allVoters) return allVoters;
+
+    const fetchedVoters = await program.account.bettingAccount.all();
+    this.redisCacheService.set('all_voters', fetchedVoters, {
+      ttl: 60 * 5,
+    } as any);
+    return fetchedVoters;
   }
 
   async marketStats(marketPublicKey: PublicKey) {
@@ -177,10 +208,6 @@ export class MarketService {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
-      const voters = await program.account.bettingAccount.all();
-      const votersInMarket = voters.filter((voter) => {
-        return voter.account.marketKey.eq(marketAccount.marketKey);
-      });
 
       const totalVolume = marketAccount.marketTotalTokens;
       const [answerPDA] = PublicKey.findProgramAddressSync(
@@ -209,9 +236,7 @@ export class MarketService {
             : Math.floor(percentage).toString();
 
         return {
-          publicKey: marketPublicKey,
           name: answer.name,
-          key: answer.answerKey,
           totalTokens: answer.answerTotalTokens,
           totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
           percentage: displayPercentage,
@@ -220,10 +245,10 @@ export class MarketService {
 
       marketStats = {
         marketId: marketPublicKey,
-        participants: votersInMarket.length,
-        totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+        // participants: votersInMarket.length,
+        // totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         answerStats,
-      }
+      };
       this.redisCacheService.set(
         `${marketPublicKey}/marketstats`,
         marketStats,

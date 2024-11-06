@@ -21,6 +21,10 @@ export class CreateMarketDto {
   @IsNotEmpty()
   @ApiProperty({ description: 'market puclic key' })
   marketPublicKey: string;
+
+  @IsNotEmpty()
+  @ApiProperty({ description: 'market cover url' })
+  coverUrl: string;
 }
 
 export class CreateBetDto {
