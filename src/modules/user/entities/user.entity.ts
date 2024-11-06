@@ -6,6 +6,7 @@ import { MarketComment } from 'src/modules/market-comment/entities/market-commen
 import {
   BeforeInsert,
   Column,
+  CreateDateColumn,
   Entity,
   OneToMany,
   OneToOne,
@@ -38,6 +39,9 @@ export class User {
 
   @Column({ default: 0 })
   totalAmount: number;
+
+  @CreateDateColumn()
+  joinedAt: Date;
 
   @BeforeInsert()
   setUsername() {
