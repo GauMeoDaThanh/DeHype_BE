@@ -30,6 +30,7 @@ import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
 import { Wallet } from 'src/decorators/current-wallet';
 import {
+  GetAllMarketReponseDto,
   MarketDetailDto,
   MarketStatsDto,
   VoterListDto,
@@ -64,7 +65,7 @@ export class MarketController {
   @ApiInternalServerErrorResponse({
     description: 'Failed to fetch markets',
   })
-  @ApiOkResponse()
+  @ApiOkResponse({ type: GetAllMarketReponseDto })
   @Public()
   @Get()
   findAll() {

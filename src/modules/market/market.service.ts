@@ -18,6 +18,7 @@ import {
 } from './dto/create-market.dto';
 import {
   AnswerAccount,
+  BettingAccountResponse,
   MarketAccount,
   MarketResponse,
 } from './dto/response-market.dto';
@@ -47,26 +48,44 @@ export class MarketService {
       const marketInfo = await this.marketRepository.find();
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
+      const voters = (await this.getAllVoters()) as BettingAccountResponse[];
 
       const marketsStats = await Promise.all(
         responses.map(async (response) => {
           const { publicKey, account } = response;
-          // const marketStats = await this.marketStats(publicKey);
+
           const market = marketInfo.find(
             (market) => market.marketId === publicKey.toString(),
           );
 
+          const votersInMarket = voters.filter((voter) => {
+            const marketKey = new BN(voter.account.marketKey, 16);
+            return marketKey.eq(account.marketKey);
+          });
+
           return {
             publicKey,
             ...account,
-            // marketStats,
             view: market.view,
             like: market.like_count,
+            createdAt: market.createdAt,
+            totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
+            numVoters: votersInMarket.length,
           };
         }),
       );
 
-      return marketsStats;
+      // return marketsStats;
+
+      // Return according to trending
+      return marketsStats.sort((a, b): number => {
+        return (
+          b.numVoters - a.numVoters ||
+          b.totalVolume - a.totalVolume ||
+          b.like - a.like ||
+          b.view - a.view
+        );
+      });
     } catch (error) {
       console.error('Error fetching market stats:', error);
       throw new InternalServerErrorException('Failed to fetch market stats');
@@ -88,6 +107,17 @@ export class MarketService {
     }
   }
 
+  async getAllVoters() {
+    const allVoters = await this.redisCacheService.get('all_voters');
+    if (allVoters) return allVoters;
+
+    const fetchedVoters = await program.account.bettingAccount.all();
+    this.redisCacheService.set('all_voters', fetchedVoters, {
+      ttl: 60 * 5,
+    } as any);
+    return fetchedVoters;
+  }
+
   async marketStats(marketPublicKey: PublicKey) {
     try {
       const marketStats = await this.redisCacheService.get(
@@ -98,10 +128,6 @@ export class MarketService {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
-      const voters = await program.account.bettingAccount.all();
-      const votersInMarket = voters.filter((voter) => {
-        return voter.account.marketKey.eq(marketAccount.marketKey);
-      });
 
       const totalVolume = marketAccount.marketTotalTokens;
       const [answerPDA] = PublicKey.findProgramAddressSync(
@@ -139,19 +165,11 @@ export class MarketService {
 
       this.redisCacheService.set(
         `${marketPublicKey}/marketstats`,
-        {
-          numVoters: votersInMarket.length,
-          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-          answerStats,
-        },
+        answerStats,
         { ttl: 60 * 10 } as any,
       );
 
-      return {
-        numVoters: votersInMarket.length,
-        totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-        answerStats,
-      };
+      return answerStats;
     } catch (error) {
       console.error('Error:', error);
       throw new InternalServerErrorException(

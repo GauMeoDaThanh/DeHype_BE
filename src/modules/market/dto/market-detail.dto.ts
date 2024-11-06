@@ -147,3 +147,60 @@ export class VoterListDto {
   })
   voters: VoterDto[];
 }
+
+export class GetAllMarketReponseDto {
+  @ApiProperty({ example: 'D1aphTvapSBD7ELKeMghYFFfFRkcKzqgJadP13oRgF1z' })
+  publicKey: string;
+
+  @ApiProperty({ example: 255 })
+  bump: number;
+
+  @ApiProperty({ example: 255 })
+  bumpVault: number;
+
+  @ApiProperty({ example: 'FECRGdR7EBXD7wPs1d1iV5VCqUrTSb6RgDizdvRkcZZY' })
+  creator: string;
+
+  @ApiProperty({ example: '07af' })
+  marketKey: string;
+
+  @ApiProperty({ example: 'Will SOL reached 1000$ at the end of this year?' })
+  title: string;
+
+  @ApiProperty({ example: '01' })
+  creatorFeePercentage: string;
+
+  @ApiProperty({ example: '00' })
+  marketTotalTokens: string;
+
+  @ApiProperty({
+    example: '<p>Will SOL reached 1000$ at the end of this year?</p>',
+  })
+  description: string;
+
+  @ApiProperty({ example: '00' })
+  correctAnswerKey: string;
+
+  @ApiProperty({ example: true })
+  isActive: boolean;
+
+  @ApiProperty({
+    example: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Solana_logo.png',
+  })
+  coverUrl: string;
+
+  @ApiProperty({ example: 1 })
+  view: number;
+
+  @ApiProperty({ example: 0 })
+  like: number;
+
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: 0 })
+  totalVolume: number;
+
+  @ApiProperty({ example: 3 })
+  numVoters: number;
+}
