@@ -21,12 +21,6 @@ class AnswerStatsDto {
 }
 
 export class MarketStatsDto {
-  @ApiProperty({ example: 2, description: 'Number of voters' })
-  numVoters: number;
-
-  @ApiProperty({ example: 31.01, description: 'Total volume of the market' })
-  totalVolume: number;
-
   @ApiProperty({
     type: [AnswerStatsDto],
     description: 'Statistics for each answer in the market',
