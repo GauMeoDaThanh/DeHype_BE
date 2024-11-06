@@ -187,6 +187,7 @@ export class MarketService {
       );
     }
   }
+
   async getAllVoters() {
     const allVoters = await this.redisCacheService.get('all_voters');
     if (allVoters) return allVoters;
@@ -245,8 +246,6 @@ export class MarketService {
 
       marketStats = {
         marketId: marketPublicKey,
-        // participants: votersInMarket.length,
-        // totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
         answerStats,
       };
       this.redisCacheService.set(
