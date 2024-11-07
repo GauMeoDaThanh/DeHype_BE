@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { CreateFavMarketDto } from './dto/create-fav-market.dto';
 import { UpdateFavMarketDto } from './dto/update-fav-market.dto';
 import { MarketService } from '../market/market.service';
@@ -18,6 +22,16 @@ export class FavMarketService {
 
   async addFavMarket(marketPubKey: string, walletAddress: string) {
     try {
+      const isLiked = await this.favMarketRepository.existsBy({
+        market: { marketId: marketPubKey },
+        user: { walletAddress: walletAddress },
+      });
+
+      if (isLiked)
+        throw new BadRequestException(
+          `${walletAddress} already like the market with id ${marketPubKey}`,
+        );
+
       const favMarket = this.favMarketRepository.create({
         user: { walletAddress: walletAddress },
         market: { marketId: marketPubKey },
@@ -25,6 +39,7 @@ export class FavMarketService {
       this.favMarketRepository.save(favMarket);
       return await this.marketService.updateMarketLike(marketPubKey, true);
     } catch (error) {
+      if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException('Error in add favourite market');
     }
   }
