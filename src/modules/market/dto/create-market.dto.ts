@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
 
 export class CreateMarketTransactionDto {
   @ApiProperty({ description: 'The name of the event' })
@@ -23,6 +23,7 @@ export class CreateMarketDto {
   marketPublicKey: string;
 
   @IsNotEmpty()
+  @IsUrl()
   @ApiProperty({ description: 'market cover url' })
   coverUrl: string;
 }
