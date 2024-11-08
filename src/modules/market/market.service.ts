@@ -91,14 +91,32 @@ export class MarketService {
       throw new InternalServerErrorException('Failed to fetch market stats');
     }
   }
-
   async getMarket(marketPublicKey: string) {
     try {
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
       )) as MarketAccount;
 
-      return { ...marketAccount };
+      const marketInfo = await this.marketRepository.findOne({
+        where: { marketId: marketPublicKey },
+      });
+
+      const voters = (await this.getAllVoters()) as BettingAccountResponse[];
+
+      const votersInMarket = voters.filter((voter) => {
+        const marketKey = new BN(voter.account.marketKey, 16);
+        return marketKey.eq(marketAccount.marketKey);
+      });
+
+      return {
+        publicKey: marketPublicKey,
+        ...marketAccount,
+        view: marketInfo.view,
+        like: marketInfo.like_count,
+        createdAt: marketInfo.createdAt,
+        totalVolume: marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
+        participants: votersInMarket.length,
+      };
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
