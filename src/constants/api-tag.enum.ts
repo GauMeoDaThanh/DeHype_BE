@@ -4,4 +4,5 @@ export enum Tag {
   AUTHENTICATE = 'Authenticate',
   BLOG = 'Blogs',
   MARKET = 'Markets',
+  SEARCH = 'Search',
 }

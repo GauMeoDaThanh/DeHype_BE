@@ -27,8 +27,9 @@ import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { BN } from '@coral-xyz/anchor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Market } from './entities/market.entity';
-import { Repository } from 'typeorm';
+import { ILike, In, Like, Repository } from 'typeorm';
 import { CacheService } from '../shared/cache/cache.service';
+import { CategoryService } from '../category/category.service';
 
 @Injectable()
 export class MarketService {
@@ -36,6 +37,7 @@ export class MarketService {
     @InjectRepository(Market)
     private marketRepository: Repository<Market>,
     private redisCacheService: CacheService,
+    private categoryService: CategoryService,
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
@@ -105,6 +107,51 @@ export class MarketService {
         `failed to fetch info in market ${marketPublicKey}`,
       );
     }
+  }
+
+  async getBatchMarkets(publicKeys: string[]) {
+    const fetchMarketFromProgram =
+      (await program.account.marketAccount.fetchMultiple(
+        publicKeys,
+      )) as MarketAccount[];
+
+    const responses: MarketResponse[] = fetchMarketFromProgram.map(
+      (info, index) => ({
+        publicKey: publicKeys[index],
+        account: info,
+      }),
+    );
+
+    const marketInfo = await this.marketRepository.find({
+      where: { marketId: In(publicKeys) },
+    });
+    const voters = (await this.getAllVoters()) as BettingAccountResponse[];
+
+    const batchMarketInfos = await Promise.all(
+      responses.map(async (response) => {
+        const { publicKey, account } = response;
+
+        const market = marketInfo.find(
+          (market) => market.marketId === publicKey.toString(),
+        );
+
+        const votersInMarket = voters.filter((voter) => {
+          const marketKey = new BN(voter.account.marketKey, 16);
+          return marketKey.eq(account.marketKey);
+        });
+
+        return {
+          publicKey,
+          ...account,
+          view: market.view,
+          like: market.like_count,
+          createdAt: market.createdAt,
+          totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
+          participants: votersInMarket.length,
+        };
+      }),
+    );
+    return batchMarketInfos;
   }
 
   async getBatchMarketStats(marketIds: string[]) {
@@ -394,10 +441,20 @@ export class MarketService {
   }
 
   async createMarket(createMarketDto: CreateMarketDto) {
-    const { marketPublicKey } = createMarketDto;
+    const { marketPublicKey, coverUrl, categoryIds, title } = createMarketDto;
 
+    if (await this.marketRepository.existsBy({ marketId: marketPublicKey }))
+      throw new BadRequestException(
+        `Already have market with id ${marketPublicKey}`,
+      );
+
+    const categories =
+      await this.categoryService.findCategoriesByIds(categoryIds);
     const marketInfo = this.marketRepository.create({
       marketId: marketPublicKey,
+      categories,
+      coverUrl,
+      title,
     });
     return await this.marketRepository.save(marketInfo);
   }
@@ -445,5 +502,60 @@ export class MarketService {
     this.marketRepository.update(marketPubKey, {
       view: () => 'view + 1',
     });
+  }
+
+  async findMarketIdsByCategory(categoryIds: number[], q?: string) {
+    try {
+      const query = this.marketRepository
+        .createQueryBuilder('market')
+        .select('market.marketId', 'marketId')
+        .distinct(true)
+        .innerJoin('market.categories', 'category')
+        .where('category.id IN (:...categoryIds)', {
+          categoryIds: categoryIds,
+        });
+      if (q) {
+        query.andWhere('market.title ILIKE :searchText', {
+          searchText: `%${q}%`,
+        });
+      }
+      const marketIds = await query.getRawMany();
+      return marketIds.map((market) => market.marketId);
+    } catch (error) {
+      console.error('Error in find market by category:', error);
+      throw new InternalServerErrorException(
+        'Error in find market by category',
+      );
+    }
+  }
+
+  async findMarketIdsByName(searchText: string) {
+    try {
+      const result = await this.marketRepository
+        .createQueryBuilder('market')
+        .select('market.marketId', 'marketId')
+        .where('market.title ILIKE :searchText', {
+          searchText: `%${searchText}%`,
+        })
+        .getRawMany();
+
+      return result.map((row) => row.marketId);
+    } catch (error) {
+      console.error('Error in find market id by name:', error);
+      throw new InternalServerErrorException('Error in find market id by name');
+    }
+  }
+
+  async findMarketByName(searchText: string) {
+    try {
+      const result = await this.marketRepository.find({
+        where: { title: ILike(`%${searchText}%`) },
+        take: 5,
+      });
+      return result;
+    } catch (error) {
+      console.error('Error in find market by name:', error);
+      throw new InternalServerErrorException('Error in find market by name');
+    }
   }
 }

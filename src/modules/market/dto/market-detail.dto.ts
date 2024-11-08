@@ -162,7 +162,7 @@ export class GetMarketsStatsDto {
   @IsNotEmpty({ each: true })
   marketIds: string[];
 }
-export class GetAllMarketReponseDto {
+export class GetAllMarketReponse {
   @ApiProperty({ example: 'D1aphTvapSBD7ELKeMghYFFfFRkcKzqgJadP13oRgF1z' })
   publicKey: string;
 
@@ -217,4 +217,26 @@ export class GetAllMarketReponseDto {
 
   @ApiProperty({ example: 3 })
   numVoters: number;
+}
+
+export class SimpleMarketResponse {
+  @ApiProperty({ example: 'J7TLfthtDwdYx3wtMJeaPL27bAJQ4pjgmemaude57BCP' })
+  marketId: string;
+
+  @ApiProperty({ example: 'Will SOL reached ATH at the end of this cycle' })
+  title: string;
+
+  @ApiProperty({
+    example: 'https://upload.wikimedia.org/wikipedia/en/b/b9/Solana_logo.png',
+  })
+  coverUrl: string;
+
+  @ApiProperty({ example: 0 })
+  view: number;
+
+  @ApiProperty({ example: 0 })
+  like_count: number;
+
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  createdAt: string;
 }

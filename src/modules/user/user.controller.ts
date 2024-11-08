@@ -49,24 +49,6 @@ export class UserController {
     return this.userService.findAllPendingUser();
   }
 
-  @ApiOperation({ summary: 'Get favourite market of user' })
-  @ApiInternalServerErrorResponse()
-  @ApiNotFoundResponse({
-    description: "Can't find the info of wallet address in system",
-  })
-  @ApiOkResponse({ type: MarketDetailDto })
-  @ApiQuery({ name: 'current', required: false, description: 'Current page' })
-  @ApiQuery({
-    name: 'pageSize',
-    required: false,
-    description: 'Number of record each page',
-  })
-  @Public()
-  @Get(':id/favmarket')
-  UserLikedMarket(@Query() query: string, @Param('id') walletAddress: string) {
-    return this.userService.getUserLikedMarkets(walletAddress, query);
-  }
-
   @Public()
   @Post()
   @ApiOperation({ summary: 'create user' })

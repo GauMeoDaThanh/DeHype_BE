@@ -1,4 +1,5 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Market } from 'src/modules/market/entities/market.entity';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Category {
@@ -10,4 +11,9 @@ export class Category {
 
   @Column()
   coverUrl: string;
+
+  @ManyToMany(() => Market, (market) => market.categories, {
+    onDelete: 'CASCADE',
+  })
+  markets: Market[];
 }

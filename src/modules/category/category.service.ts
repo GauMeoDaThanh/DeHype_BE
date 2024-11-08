@@ -8,7 +8,7 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { extractPublicId } from 'cloudinary-build-url';
 
@@ -120,5 +120,14 @@ export class CategoryService {
       console.error('Error in remove category:', error);
       throw new InternalServerErrorException('Error in remove category');
     }
+  }
+
+  async findCategoriesByIds(categoryIds: number[]) {
+    const categories = await this.categoryRepository.findBy({
+      id: In(categoryIds),
+    });
+    if (categoryIds.length !== categories.length)
+      throw new BadRequestException('One or more categories Ids are invalid');
+    return categories;
   }
 }

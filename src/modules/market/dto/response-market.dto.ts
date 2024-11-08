@@ -18,7 +18,7 @@ export type MarketAccount = {
 };
 
 export type MarketResponse = {
-  publicKey: PublicKey;
+  publicKey: PublicKey | string;
   account: MarketAccount;
 };
 

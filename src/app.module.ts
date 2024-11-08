@@ -17,6 +17,7 @@ import { BlockUserModule } from './modules/block-user/block-user.module';
 import { RedisCacheModule } from './modules/shared/cache/cache.module';
 import { FavMarketModule } from './modules/fav-market/fav-market.module';
 import { CategoryModule } from './modules/category/category.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CategoryModule } from './modules/category/category.module';
     BlockUserModule,
     FavMarketModule,
     CategoryModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [

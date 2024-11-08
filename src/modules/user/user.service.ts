@@ -187,11 +187,4 @@ export class UserService {
       throw new InternalServerErrorException('Something went wrong');
     }
   }
-
-  async getUserLikedMarkets(walletAddress: string, query: string) {
-    const user = await this.getUser(walletAddress);
-    if (!user) throw new NotFoundException(`Can't find user ${walletAddress}`);
-
-    return await this.favMarketService.getAllLikedMarket(walletAddress, query);
-  }
 }

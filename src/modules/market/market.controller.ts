@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
 import {
@@ -30,7 +31,7 @@ import { PublicKey } from '@solana/web3.js';
 import { Wallet } from 'src/decorators/current-wallet';
 import {
   GetMarketsStatsDto,
-  GetAllMarketReponseDto,
+  GetAllMarketReponse,
   MarketDetailDto,
   MarketStatsDto,
   VoterListDto,
@@ -40,7 +41,7 @@ import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 @ApiTags(Tag.MARKET)
 @Controller('markets')
 export class MarketController {
-  constructor(private readonly marketService: MarketService) { }
+  constructor(private readonly marketService: MarketService) {}
 
   @Post('transaction')
   @Public()
@@ -65,7 +66,7 @@ export class MarketController {
   @ApiInternalServerErrorResponse({
     description: 'Failed to fetch markets',
   })
-  @ApiOkResponse({ type: GetAllMarketReponseDto })
+  @ApiOkResponse({ type: GetAllMarketReponse })
   @Public()
   @Get()
   findAll() {
@@ -133,14 +134,14 @@ export class MarketController {
     return this.marketService.addMarketView(id);
   }
 
-
   @ApiOperation({
     summary: 'Get stats for multiple markets',
-    description: 'Fetches participation, liquidity and answer statistics for multiple markets'
+    description:
+      'Fetches participation, liquidity and answer statistics for multiple markets',
   })
   @ApiOkResponse({
     description: 'Market stats retrieved successfully',
-    type: Object
+    type: Object,
   })
   @Public()
   @Post('stats')

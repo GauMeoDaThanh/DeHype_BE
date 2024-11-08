@@ -9,5 +9,6 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
   imports: [TypeOrmModule.forFeature([Category]), CloudinaryModule],
   controllers: [CategoryController],
   providers: [CategoryService],
+  exports: [CategoryService],
 })
 export class CategoryModule {}

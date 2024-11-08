@@ -23,9 +23,17 @@ export class CreateMarketDto {
   marketPublicKey: string;
 
   @IsNotEmpty()
+  @ApiProperty({ description: 'title of market' })
+  title: string;
+
+  @IsNotEmpty()
   @IsUrl()
   @ApiProperty({ description: 'market cover url' })
   coverUrl: string;
+
+  @IsNotEmpty()
+  @ApiProperty({ description: 'category list' })
+  categoryIds: number[];
 }
 
 export class CreateBetDto {

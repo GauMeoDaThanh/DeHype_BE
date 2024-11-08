@@ -94,4 +94,40 @@ export class FavMarketService {
       );
     }
   }
+  async findMarketIdsInFav(
+    walletAddress: string,
+    categoryIds?: number[],
+    q?: string,
+  ) {
+    try {
+      const query = this.favMarketRepository
+        .createQueryBuilder('favMarket')
+        .innerJoin('favMarket.market', 'market')
+        .select('market.marketId')
+        .distinct(true)
+        .where('favMarket.user.walletAddress = :walletAddress', {
+          walletAddress,
+        });
+
+      if (categoryIds && categoryIds.length > 0) {
+        query
+          .innerJoin('market.categories', 'category')
+          .andWhere('category.id IN (:...categoryIds)', { categoryIds });
+      }
+
+      if (q) {
+        query.andWhere('market.title ILIKE :searchText', {
+          searchText: `%${q}%`,
+        });
+      }
+
+      const marketIds = await query.getRawMany();
+      return marketIds.map((market) => market.market_marketId);
+    } catch (error) {
+      console.error('Error in get all favourite market ids for user:', error);
+      throw new InternalServerErrorException(
+        'Error in get all favourite market ids for user',
+      );
+    }
+  }
 }
