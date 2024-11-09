@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -30,6 +32,7 @@ import { Market } from './entities/market.entity';
 import { ILike, In, Like, Repository } from 'typeorm';
 import { CacheService } from '../shared/cache/cache.service';
 import { CategoryService } from '../category/category.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class MarketService {
@@ -38,6 +41,7 @@ export class MarketService {
     private marketRepository: Repository<Market>,
     private redisCacheService: CacheService,
     private categoryService: CategoryService,
+    private userService: UserService,
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
@@ -116,7 +120,8 @@ export class MarketService {
         view: marketInfo.view,
         like: marketInfo.like_count,
         createdAt: marketInfo.createdAt,
-        totalVolume: marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
+        totalVolume:
+          marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
         participants: votersInMarket.length,
       };
     } catch (error) {
@@ -349,18 +354,30 @@ export class MarketService {
         voter.account.marketKey.eq(marketAccount.marketKey),
       );
 
-      const result = votersInMarket.map((voter) => {
-        voter.account.createTime = new Date(
-          voter.account.createTime.toNumber() * 1000,
-        ).toUTCString();
-        voter.account.tokens =
-          voter.account.tokens.toNumber() / SOLANA_DECIMALS;
-        const answerName = answerAccount.answers.find((ans) =>
-          ans.answerKey.eq(voter.account.answerKey),
-        );
-        voter.account.answerKey = answerName.name;
-        return voter;
-      });
+      const result = await Promise.all(
+        votersInMarket.map(async (voter) => {
+          const voterInfo = await this.userService.getUser(
+            voter.account.voter.toString(),
+          );
+
+          voter.account.createTime = new Date(
+            voter.account.createTime.toNumber() * 1000,
+          ).toUTCString();
+          voter.account.tokens =
+            voter.account.tokens.toNumber() / SOLANA_DECIMALS;
+          const answerName = answerAccount.answers.find((ans) =>
+            ans.answerKey.eq(voter.account.answerKey),
+          );
+          voter.account.answerKey = answerName.name;
+
+          return {
+            publicKey: voter.publicKey,
+            username: voterInfo.username,
+            avatarUrl: voterInfo.avatarUrl,
+            account: voter.account,
+          };
+        }),
+      );
 
       return result;
     } catch (error) {

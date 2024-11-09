@@ -134,6 +134,14 @@ export class VoterDto {
   })
   publicKey: string;
 
+  @ApiProperty({ description: 'username of the voter' })
+  username: string;
+
+  @ApiProperty({
+    description: 'avatar of the voter',
+  })
+  avatarUrl: string;
+
   @ApiProperty({
     type: VoterAccountDto,
     description: 'Details of the voter account',

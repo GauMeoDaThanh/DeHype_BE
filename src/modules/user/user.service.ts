@@ -8,7 +8,7 @@ import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -19,8 +19,6 @@ import {
   MetaDto,
   UserResultDto,
 } from './dto/response-user.dto';
-import { MarketService } from '../market/market.service';
-import { FavMarketService } from '../fav-market/fav-market.service';
 
 @Injectable()
 export class UserService {
@@ -30,7 +28,6 @@ export class UserService {
     @InjectRepository(PendingUser)
     private pendingUserRepository: Repository<PendingUser>,
     private cloudinaryService: CloudinaryService,
-    private favMarketService: FavMarketService,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
