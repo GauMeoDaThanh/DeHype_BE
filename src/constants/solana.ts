@@ -3,6 +3,7 @@ import * as anchor from '@coral-xyz/anchor';
 import idl from 'src/artifact/dehype.json';
 import * as dotenv from 'dotenv';
 import { Idl, Program } from '@project-serum/anchor';
+import { HermesClient } from '@pythnetwork/hermes-client';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -11,6 +12,11 @@ dotenv.config();
 export const connection = new Connection(
   process.env.SOLANA_RPC_URL!, // Make sure your .env file contains the SOLANA_RPC_URL key
   'confirmed',
+);
+
+export const hermesConnection = new HermesClient(
+  'https://hermes.pyth.network',
+  {},
 );
 
 // Set up anchor provider

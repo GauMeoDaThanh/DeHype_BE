@@ -16,6 +16,7 @@ import {
   CreateBetDto,
   CreateMarketDto,
   CreateMarketTransactionDto,
+  GetVoterHistoryQueryDto,
   ResolveMarketDto,
 } from './dto/create-market.dto';
 import {
@@ -24,7 +25,12 @@ import {
   MarketAccount,
   MarketResponse,
 } from './dto/response-market.dto';
-import { connection, program, SOLANA_DECIMALS } from 'src/constants';
+import {
+  connection,
+  program,
+  SOLANA_DECIMALS,
+  hermesConnection,
+} from 'src/constants';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { BN } from '@coral-xyz/anchor';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -333,12 +339,43 @@ export class MarketService {
     }
   }
 
-  async votersInMarket(marketPublicKey: PublicKey) {
+  async getSOLPrice() {
     try {
+      const cachedPrice = await this.redisCacheService.get('sol_price');
+
+      if (cachedPrice) return cachedPrice as number;
+
+      const pricesInfo = (
+        await hermesConnection.getLatestPriceUpdates([
+          '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d',
+        ])
+      ).parsed[0].price;
+
+      const priceInUSD =
+        Number(pricesInfo.price) /
+        Math.pow(10, Math.abs(Number(pricesInfo.expo)));
+
+      this.redisCacheService.set('sol_price', priceInUSD, {
+        ttl: 60 * 3,
+      } as any);
+
+      return priceInUSD as number;
+    } catch (error) {
+      console.error('Error in get SOL prices:', error);
+      throw new InternalServerErrorException('Error in get SOL prices');
+    }
+  }
+
+  async votersInMarket(
+    marketPublicKey: PublicKey,
+    query: GetVoterHistoryQueryDto,
+  ) {
+    try {
+      const { min } = query;
+      const SOLPrice: number = await this.getSOLPrice();
       const marketAccount =
         await program.account.marketAccount.fetch(marketPublicKey);
       const voters = await program.account.bettingAccount.all();
-
       const [answerPDA] = PublicKey.findProgramAddressSync(
         [
           Buffer.from('answer'),
@@ -349,17 +386,16 @@ export class MarketService {
       const answerAccount = (await program.account.answerAccount.fetch(
         answerPDA,
       )) as unknown as AnswerAccount;
-
       const votersInMarket = voters.filter((voter) =>
         voter.account.marketKey.eq(marketAccount.marketKey),
       );
 
+      // handle logic to fetch desired data
       const result = await Promise.all(
         votersInMarket.map(async (voter) => {
           const voterInfo = await this.userService.getUser(
             voter.account.voter.toString(),
           );
-
           voter.account.createTime = new Date(
             voter.account.createTime.toNumber() * 1000,
           ).toUTCString();
@@ -369,17 +405,16 @@ export class MarketService {
             ans.answerKey.eq(voter.account.answerKey),
           );
           voter.account.answerKey = answerName.name;
-
           return {
             publicKey: voter.publicKey,
             username: voterInfo.username,
             avatarUrl: voterInfo.avatarUrl,
+            totalBet: (voter.account.tokens * SOLPrice).toFixed(2),
             account: voter.account,
           };
         }),
       );
-
-      return result;
+      return result.filter((voter) => Number(voter.totalBet) >= Number(min));
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(

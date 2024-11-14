@@ -14,6 +14,7 @@ import {
   CreateBetDto,
   CreateMarketDto,
   CreateMarketTransactionDto,
+  GetVoterHistoryQueryDto,
 } from './dto/create-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
@@ -37,6 +38,7 @@ import {
   VoterListDto,
 } from './dto/market-detail.dto';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { query } from 'express';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -108,8 +110,11 @@ export class MarketController {
   @ApiParam({ name: 'id', type: String, description: 'Public key of market' })
   @Public()
   @Get(':id/voters')
-  votersInMarket(@Param('id') id: PublicKey) {
-    return this.marketService.votersInMarket(id);
+  votersInMarket(
+    @Param('id') id: PublicKey,
+    @Query() query: GetVoterHistoryQueryDto,
+  ) {
+    return this.marketService.votersInMarket(id, query);
   }
 
   @ApiOperation({ summary: 'place bet in market' })

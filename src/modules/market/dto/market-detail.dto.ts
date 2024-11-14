@@ -143,6 +143,12 @@ export class VoterDto {
   avatarUrl: string;
 
   @ApiProperty({
+    example: 24.81,
+    description: 'Total usd value of the bets placed by the voter',
+  })
+  totalBet: number;
+
+  @ApiProperty({
     type: VoterAccountDto,
     description: 'Details of the voter account',
   })

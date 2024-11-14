@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
-import { IsNotEmpty, IsOptional, IsUrl } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsUrl } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateMarketTransactionDto {
   @ApiProperty({ description: 'The name of the event' })
@@ -62,3 +63,10 @@ export class ResolveMarketDto {
 //   @IsOptional()
 //   trending: boolean;
 // }
+
+export class GetVoterHistoryQueryDto {
+  @IsOptional()
+  @Transform(({ value }) => parseFloat(value))
+  @IsNumber()
+  min: number;
+}
