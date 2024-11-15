@@ -356,7 +356,7 @@ export class MarketService {
         Math.pow(10, Math.abs(Number(pricesInfo.expo)));
 
       this.redisCacheService.set('sol_price', priceInUSD, {
-        ttl: 60 * 3,
+        ttl: 60 * 10,
       } as any);
 
       return priceInUSD as number;
@@ -414,7 +414,9 @@ export class MarketService {
           };
         }),
       );
-      return result.filter((voter) => Number(voter.totalBet) >= Number(min));
+      return result.filter(
+        (voter) => Number(voter.totalBet) >= Number(min || 0),
+      );
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
