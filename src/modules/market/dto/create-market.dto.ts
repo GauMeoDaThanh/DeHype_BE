@@ -65,6 +65,7 @@ export class ResolveMarketDto {
 // }
 
 export class GetVoterHistoryQueryDto {
+  @ApiProperty({ description: 'The min amount of bet' })
   @IsOptional()
   @Transform(({ value }) => parseFloat(value))
   @IsNumber()

@@ -26,6 +26,7 @@ import {
   ApiCreatedResponse,
   ApiBadRequestResponse,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
