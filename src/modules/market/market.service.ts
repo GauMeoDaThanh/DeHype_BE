@@ -365,7 +365,7 @@ export class MarketService {
       throw new InternalServerErrorException('Error in get SOL prices');
     }
   }
-
+  
   async votersInMarket(
     marketPublicKey: PublicKey,
     query: GetVoterHistoryQueryDto,

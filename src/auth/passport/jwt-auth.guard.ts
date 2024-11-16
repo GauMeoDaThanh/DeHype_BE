@@ -9,10 +9,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from 'src/decorators/public-route';
 import { Role } from 'src/constants/role.enum';
 import { ROLE } from 'src/decorators/role-route';
+import { BlockUserService } from 'src/modules/block-user/block-user.service';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private reflector: Reflector) {
+  constructor(
+    private reflector: Reflector,
+    private blockUserService: BlockUserService,
+  ) {
     super();
   }
 
@@ -36,6 +40,16 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     }
 
     const { user } = context.switchToHttp().getRequest();
+    const blockInfo = await this.blockUserService.findBlockUser(
+      user.walletAddress,
+    );
+
+    if (blockInfo) {
+      throw new ForbiddenException({
+        error: 'This address has been banned',
+        blockInfo,
+      });
+    }
 
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLE, [
       context.getHandler(),
