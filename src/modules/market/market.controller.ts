@@ -49,6 +49,11 @@ export class MarketController {
   constructor(private readonly marketService: MarketService) {}
 
   @Public()
+  @ApiOperation({
+    summary: 'Get live updates for a market',
+    description:
+      'This endpoint provides live updates for the specified market via SSE (Server-Sent Events). The updates are pushed every specified interval.',
+  })
   @Sse(':id/live-updates')
   getMarketUpdates(@Param('id') id: string) {
     return this.marketService.getMarketLiveUpdate(id);
