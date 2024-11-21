@@ -42,6 +42,7 @@ import {
 } from './dto/market-detail.dto';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { query } from 'express';
+import { MarketLiveUpdateResponseDto } from './dto/response-market.dto';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -52,8 +53,9 @@ export class MarketController {
   @ApiOperation({
     summary: 'Get live updates for a market',
     description:
-      'This endpoint provides live updates for the specified market via SSE (Server-Sent Events). The updates are pushed every specified interval.',
+      "This endpoint provides live updates for the specified market via SSE (Server-Sent Events). The updates are pushed every specified interval.\n CAN'T TEST IN SWAGGER",
   })
+  @ApiOkResponse({ type: MarketLiveUpdateResponseDto })
   @Sse(':id/live-updates')
   getMarketUpdates(@Param('id') id: string) {
     return this.marketService.getMarketLiveUpdate(id);

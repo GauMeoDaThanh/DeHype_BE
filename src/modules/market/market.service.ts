@@ -661,7 +661,10 @@ export class MarketService {
     }
   }
 
-  async handleMarketOptionStats(marketPubKey: PublicKey | string) {
+  async handleMarketOptionStats(
+    marketPubKey: PublicKey | string,
+    isFirstTimeConnect = false,
+  ) {
     try {
       await this.createPartitionIfNotExist(marketPubKey);
       const stats = (await this.marketStats(
@@ -686,25 +689,39 @@ export class MarketService {
         }),
       );
 
-      const marketOptionStats = await this.marketOptionsStatsRepository.find({
-        where: {
-          timestamp: time,
-          market: { marketId: marketPubKey.toString() },
-        },
-        select: ['name', 'percentage', 'timestamp'],
-        order: { timestamp: 'ASC', name: 'DESC' },
-      });
-
+      const marketOptionStats = isFirstTimeConnect
+        ? await this.marketOptionsStatsRepository.find({
+            where: { market: { marketId: marketPubKey.toString() } },
+            select: ['name', 'percentage', 'timestamp'],
+            order: { timestamp: 'ASC', name: 'DESC' },
+          })
+        : await this.marketOptionsStatsRepository.find({
+            where: {
+              timestamp: time,
+              market: { marketId: marketPubKey.toString() },
+            },
+            select: ['name', 'percentage', 'timestamp'],
+            order: { timestamp: 'ASC', name: 'DESC' },
+          });
       const groupedStats = marketOptionStats.reduce((acc, stat) => {
-        if (!acc[stat.timestamp.toISOString()]) {
-          acc[stat.timestamp.toISOString()] = [];
+        const existingEntry = acc.find(
+          (entry) => entry.timestamp === stat.timestamp.toISOString(),
+        );
+
+        if (!existingEntry) {
+          acc.push({
+            timestamp: stat.timestamp.toISOString(),
+            data: [{ name: stat.name, percentage: stat.percentage }],
+          });
+        } else {
+          existingEntry.data.push({
+            name: stat.name,
+            percentage: stat.percentage,
+          });
         }
-        acc[stat.timestamp.toISOString()].push({
-          name: stat.name,
-          percentage: stat.percentage,
-        });
+
         return acc;
-      }, {});
+      }, []);
       return groupedStats;
     } catch (error) {
       console.error('Error in handle market options stats:', error);
@@ -716,29 +733,28 @@ export class MarketService {
 
   async getMarketLiveUpdate(marketPubKey: string) {
     try {
-      const initialStats = await this.marketOptionsStatsRepository.find({
-        where: { market: { marketId: marketPubKey.toString() } },
-        select: ['name', 'percentage', 'timestamp'],
-        order: { timestamp: 'ASC', name: 'DESC' },
-      });
+      const initialStats = await this.handleMarketOptionStats(
+        marketPubKey,
+        true,
+      );
 
       return new Observable((subscriber) => {
         subscriber.next({
-          data: { 
+          data: {
             marketPubKey,
-            update: 'Initial data',
+            state: 'Initial data',
             stats: initialStats,
           },
         });
 
-        const intervalSubscription = interval(1000 * 60 * 2)
+        const intervalSubscription = interval(1000 * 60 * 1)
           .pipe(
             switchMap(async () => {
               const stats = await this.handleMarketOptionStats(marketPubKey);
               return {
                 data: {
                   marketPubKey,
-                  update: 'Live update',
+                  state: 'Live update',
                   stats,
                 },
               };

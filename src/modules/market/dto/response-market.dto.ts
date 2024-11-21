@@ -1,5 +1,6 @@
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
+import { ApiProperty } from '@nestjs/swagger';
 
 export type MarketAccount = {
   bump: number; // u8
@@ -49,3 +50,51 @@ export type BettingAccountResponse = {
   publicKey: PublicKey;
   account: BettingAccount;
 };
+
+class MarketOptionStatDataDto {
+  @ApiProperty({
+    description: 'Name of the market option.',
+    example: 'Yes',
+  })
+  name: string;
+
+  @ApiProperty({
+    description: 'Percentage associated with the market option.',
+    example: '80.01',
+  })
+  percentage: string;
+}
+
+class MarketOptionStatDto {
+  @ApiProperty({
+    description: 'Timestamp for the market option statistics.',
+    example: '2024-11-21T11:53:50.169Z',
+  })
+  timestamp: string;
+
+  @ApiProperty({
+    description: 'List of market option data.',
+    type: [MarketOptionStatDataDto],
+  })
+  data: MarketOptionStatDataDto[];
+}
+
+export class MarketLiveUpdateResponseDto {
+  @ApiProperty({
+    description: 'The public key of the market.',
+    example: '7GL9fMUzY9r6WPCvJbtbJAhNdLr1h8pNf9Je9oqjxapf',
+  })
+  marketPubKey: string;
+
+  @ApiProperty({
+    description: 'Message or type of state.',
+    example: 'Initial data',
+  })
+  state: string;
+
+  @ApiProperty({
+    description: 'Statistics of the market options over time.',
+    type: [MarketOptionStatDto],
+  })
+  stats: MarketOptionStatDto[];
+}
