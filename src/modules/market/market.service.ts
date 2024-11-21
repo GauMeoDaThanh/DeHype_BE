@@ -39,12 +39,17 @@ import { ILike, In, Like, Repository } from 'typeorm';
 import { CacheService } from '../shared/cache/cache.service';
 import { CategoryService } from '../category/category.service';
 import { UserService } from '../user/user.service';
+import { interval, Observable, switchMap } from 'rxjs';
+import { MarketStatsDto } from './dto/market-detail.dto';
+import { MarketOptionStats } from './entities/market-option-stats.entity';
 
 @Injectable()
 export class MarketService {
   constructor(
     @InjectRepository(Market)
     private marketRepository: Repository<Market>,
+    @InjectRepository(MarketOptionStats)
+    private marketOptionsStatsRepository: Repository<MarketOptionStats>,
     private redisCacheService: CacheService,
     private categoryService: CategoryService,
     private userService: UserService,
@@ -275,12 +280,12 @@ export class MarketService {
     return fetchedVoters;
   }
 
-  async marketStats(marketPublicKey: PublicKey) {
+  async marketStats(marketPublicKey: PublicKey | string, isCache = true) {
     try {
       let marketStats = await this.redisCacheService.get(
         `${marketPublicKey}/marketstats`,
       );
-      if (marketStats) return marketStats;
+      if (marketStats && isCache) return marketStats;
 
       const marketAccount = (await program.account.marketAccount.fetch(
         marketPublicKey,
@@ -365,7 +370,7 @@ export class MarketService {
       throw new InternalServerErrorException('Error in get SOL prices');
     }
   }
-  
+
   async votersInMarket(
     marketPublicKey: PublicKey,
     query: GetVoterHistoryQueryDto,
@@ -628,6 +633,128 @@ export class MarketService {
     } catch (error) {
       console.error('Error in find market by name:', error);
       throw new InternalServerErrorException('Error in find market by name');
+    }
+  }
+
+  async createPartitionIfNotExist(marketPubKey: PublicKey | string) {
+    try {
+      const partitionName = `market_option_stats_${marketPubKey.toString()}`;
+      const partitionExists =
+        await this.marketOptionsStatsRepository.manager.query(
+          `          SELECT EXISTS (
+            SELECT 1
+            FROM pg_inherits
+            JOIN pg_class parent ON pg_inherits.inhparent = parent.oid
+            JOIN pg_class child ON pg_inherits.inhrelid = child.oid
+            WHERE child.relname = '${partitionName}'
+        );`,
+        );
+      if (!partitionExists[0].exists) {
+        await this.marketOptionsStatsRepository.manager.query(
+          `CREATE TABLE "${partitionName}" PARTITION OF "market_option_stats"
+          FOR VALUES IN ('${marketPubKey}');`,
+        );
+      }
+    } catch (error) {
+      console.error('Error in check partition exists:', error);
+      throw new InternalServerErrorException('Error in check partition exists');
+    }
+  }
+
+  async handleMarketOptionStats(marketPubKey: PublicKey | string) {
+    try {
+      await this.createPartitionIfNotExist(marketPubKey);
+      const stats = (await this.marketStats(
+        marketPubKey,
+        false,
+      )) as MarketStatsDto;
+      const simplifiedData = stats.answerStats.map((stat) => ({
+        name: stat.name,
+        percentage: stat.percentage,
+      }));
+
+      const time = new Date();
+      await Promise.all(
+        simplifiedData.map(async (stat) => {
+          const marketOptionStat = this.marketOptionsStatsRepository.create({
+            market: { marketId: marketPubKey.toString() },
+            name: stat.name,
+            percentage: stat.percentage,
+            timestamp: time,
+          });
+          await this.marketOptionsStatsRepository.save(marketOptionStat);
+        }),
+      );
+
+      const marketOptionStats = await this.marketOptionsStatsRepository.find({
+        where: {
+          timestamp: time,
+          market: { marketId: marketPubKey.toString() },
+        },
+        select: ['name', 'percentage', 'timestamp'],
+        order: { timestamp: 'ASC', name: 'DESC' },
+      });
+
+      const groupedStats = marketOptionStats.reduce((acc, stat) => {
+        if (!acc[stat.timestamp.toISOString()]) {
+          acc[stat.timestamp.toISOString()] = [];
+        }
+        acc[stat.timestamp.toISOString()].push({
+          name: stat.name,
+          percentage: stat.percentage,
+        });
+        return acc;
+      }, {});
+      return groupedStats;
+    } catch (error) {
+      console.error('Error in handle market options stats:', error);
+      throw new InternalServerErrorException(
+        'Error in handle market options stats',
+      );
+    }
+  }
+
+  async getMarketLiveUpdate(marketPubKey: string) {
+    try {
+      const initialStats = await this.marketOptionsStatsRepository.find({
+        where: { market: { marketId: marketPubKey.toString() } },
+        select: ['name', 'percentage', 'timestamp'],
+        order: { timestamp: 'ASC', name: 'DESC' },
+      });
+
+      return new Observable((subscriber) => {
+        subscriber.next({
+          data: { 
+            marketPubKey,
+            update: 'Initial data',
+            stats: initialStats,
+          },
+        });
+
+        const intervalSubscription = interval(1000 * 60 * 2)
+          .pipe(
+            switchMap(async () => {
+              const stats = await this.handleMarketOptionStats(marketPubKey);
+              return {
+                data: {
+                  marketPubKey,
+                  update: 'Live update',
+                  stats,
+                },
+              };
+            }),
+          )
+          .subscribe({
+            next: (data) => subscriber.next(data),
+            error: (err) => subscriber.error(err),
+          });
+
+        // Cleanup on unsubscribe
+        return () => intervalSubscription.unsubscribe();
+      });
+    } catch (error) {
+      console.error('Error in get market live update:', error);
+      throw new InternalServerErrorException('Error in get market live update');
     }
   }
 }

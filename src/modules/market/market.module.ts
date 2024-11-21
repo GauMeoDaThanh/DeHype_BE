@@ -6,10 +6,11 @@ import { Market } from './entities/market.entity';
 import { RedisCacheModule } from '../shared/cache/cache.module';
 import { CategoryModule } from '../category/category.module';
 import { UserModule } from '../user/user.module';
+import { MarketOptionStats } from './entities/market-option-stats.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Market]),
+    TypeOrmModule.forFeature([Market, MarketOptionStats]),
     RedisCacheModule,
     CategoryModule,
     UserModule,

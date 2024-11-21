@@ -8,6 +8,7 @@ import {
   Delete,
   UseInterceptors,
   Query,
+  Sse,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
 import {
@@ -27,6 +28,7 @@ import {
   ApiBadRequestResponse,
   ApiParam,
   ApiQuery,
+  ApiExcludeEndpoint,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
@@ -45,6 +47,12 @@ import { query } from 'express';
 @Controller('markets')
 export class MarketController {
   constructor(private readonly marketService: MarketService) {}
+
+  @Public()
+  @Sse(':id/live-updates')
+  getMarketUpdates(@Param('id') id: string) {
+    return this.marketService.getMarketLiveUpdate(id);
+  }
 
   @Post('transaction')
   @Public()
@@ -153,5 +161,12 @@ export class MarketController {
   @Post('stats')
   async getMarketsStat(@Body() dto: GetMarketsStatsDto) {
     return this.marketService.getBatchMarketStats(dto.marketIds);
+  }
+
+  @ApiExcludeEndpoint()
+  @Public()
+  @Get('test/:id')
+  test(@Param('id') id: string) {
+    return this.marketService.handleMarketOptionStats(id);
   }
 }
