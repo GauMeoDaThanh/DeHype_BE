@@ -747,7 +747,7 @@ export class MarketService {
           },
         });
 
-        const intervalSubscription = interval(1000 * 60 * 1)
+        const intervalSubscription = interval(1000 * 20 * 1)
           .pipe(
             switchMap(async () => {
               const stats = await this.handleMarketOptionStats(marketPubKey);
