@@ -694,6 +694,7 @@ export class MarketService {
             where: { market: { marketId: marketPubKey.toString() } },
             select: ['name', 'percentage', 'timestamp'],
             order: { timestamp: 'ASC', name: 'DESC' },
+            take: 200,
           })
         : await this.marketOptionsStatsRepository.find({
             where: {
