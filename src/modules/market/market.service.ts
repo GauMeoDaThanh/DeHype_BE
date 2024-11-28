@@ -675,6 +675,7 @@ export class MarketService {
         name: stat.name,
         percentage: stat.percentage,
       }));
+      console.log("i'm here");
 
       const time = new Date();
       await Promise.all(
@@ -692,7 +693,7 @@ export class MarketService {
       const marketOptionStats = isFirstTimeConnect
         ? await this.marketOptionsStatsRepository.find({
             where: { market: { marketId: marketPubKey.toString() } },
-            select: ['name', 'percentage', 'timestamp'],
+            select: ['name', 'percentage', 'timestamp', 'marketId'],
             order: { timestamp: 'ASC', name: 'DESC' },
             take: 200,
           })
@@ -767,7 +768,12 @@ export class MarketService {
           });
 
         // Cleanup on unsubscribe
-        return () => intervalSubscription.unsubscribe();
+        return () => {
+          console.log(
+            `Unsubscribing from market live update for market ${marketPubKey}`,
+          );
+          intervalSubscription.unsubscribe();
+        };
       });
     } catch (error) {
       console.error('Error in get market live update:', error);
