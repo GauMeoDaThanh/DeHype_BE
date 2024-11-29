@@ -42,6 +42,8 @@ import { UserService } from '../user/user.service';
 import { interval, Observable, switchMap } from 'rxjs';
 import { MarketStatsDto } from './dto/market-detail.dto';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
+import { Response } from 'express';
+import { time } from 'console';
 
 @Injectable()
 export class MarketService {
@@ -675,36 +677,58 @@ export class MarketService {
         name: stat.name,
         percentage: stat.percentage,
       }));
-      console.log("i'm here");
 
-      const time = new Date();
-      await Promise.all(
-        simplifiedData.map(async (stat) => {
-          const marketOptionStat = this.marketOptionsStatsRepository.create({
-            market: { marketId: marketPubKey.toString() },
-            name: stat.name,
-            percentage: stat.percentage,
-            timestamp: time,
-          });
-          await this.marketOptionsStatsRepository.save(marketOptionStat);
-        }),
+      console.log('dang lay data');
+      const lastUpdateTimestamp = await this.redisCacheService.get(
+        `${marketPubKey}/updateStats`,
+      );
+      const lastUpdateDate = new Date(
+        await this.redisCacheService.get(`${marketPubKey}/updateStats`),
       );
 
-      const marketOptionStats = isFirstTimeConnect
-        ? await this.marketOptionsStatsRepository.find({
-            where: { market: { marketId: marketPubKey.toString() } },
-            select: ['name', 'percentage', 'timestamp', 'marketId'],
-            order: { timestamp: 'ASC', name: 'DESC' },
-            take: 200,
-          })
-        : await this.marketOptionsStatsRepository.find({
-            where: {
+      if (!lastUpdateTimestamp) {
+        var time = new Date();
+        await Promise.all(
+          simplifiedData.map(async (stat) => {
+            const marketOptionStat = this.marketOptionsStatsRepository.create({
+              market: { marketId: marketPubKey.toString() },
+              name: stat.name,
+              percentage: stat.percentage,
               timestamp: time,
+            });
+            await this.marketOptionsStatsRepository.save(marketOptionStat);
+          }),
+        );
+        this.redisCacheService.set(
+          `${marketPubKey}/updateStats`,
+          time,
+          { ttl: 15 } as any, // 15 seconds TTL
+        );
+      }
+
+      // Get data from database
+      const marketOptionStats = !isFirstTimeConnect
+        ? await this.marketOptionsStatsRepository.find({
+            where: {
+              timestamp: lastUpdateTimestamp
+                ? lastUpdateDate
+                : new Date(
+                    await this.redisCacheService.get(
+                      `${marketPubKey}/updateStats`,
+                    ),
+                  ),
               market: { marketId: marketPubKey.toString() },
             },
             select: ['name', 'percentage', 'timestamp'],
             order: { timestamp: 'ASC', name: 'DESC' },
+          })
+        : await this.marketOptionsStatsRepository.find({
+            where: { market: { marketId: marketPubKey.toString() } },
+            select: ['name', 'percentage', 'timestamp', 'marketId'],
+            order: { timestamp: 'DESC', name: 'DESC' },
+            take: 200,
           });
+      // Format reponse data
       const groupedStats = marketOptionStats.reduce((acc, stat) => {
         const existingEntry = acc.find(
           (entry) => entry.timestamp === stat.timestamp.toISOString(),
@@ -733,7 +757,15 @@ export class MarketService {
     }
   }
 
-  async getMarketLiveUpdate(marketPubKey: string) {
+  async getMarketStatsUpdateByPolling(marketPubKey: string, isInit: boolean) {
+    if (isInit) {
+      return await this.handleMarketOptionStats(marketPubKey, true);
+    } else {
+      return await this.handleMarketOptionStats(marketPubKey);
+    }
+  }
+
+  async getMarketLiveUpdate(marketPubKey: string, res: Response) {
     try {
       const initialStats = await this.handleMarketOptionStats(
         marketPubKey,
@@ -748,7 +780,6 @@ export class MarketService {
             stats: initialStats,
           },
         });
-
         const intervalSubscription = interval(1000 * 20 * 1)
           .pipe(
             switchMap(async () => {

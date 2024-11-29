@@ -9,6 +9,8 @@ import {
   UseInterceptors,
   Query,
   Sse,
+  Res,
+  Req,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
 import {
@@ -43,6 +45,7 @@ import {
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { query } from 'express';
 import { MarketLiveUpdateResponseDto } from './dto/response-market.dto';
+import { interval, map, Observable } from 'rxjs';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -57,8 +60,21 @@ export class MarketController {
   })
   @ApiOkResponse({ type: MarketLiveUpdateResponseDto })
   @Sse(':id/live-updates')
-  getMarketUpdates(@Param('id') id: string) {
-    return this.marketService.getMarketLiveUpdate(id);
+  getMarketUpdates(@Param('id') id: string, @Res() res) {
+    return this.marketService.getMarketLiveUpdate(id, res);
+  }
+
+  @Public()
+  @ApiOperation({
+    summary: 'Get market stats updates for a market',
+  })
+  @ApiOkResponse({ type: MarketLiveUpdateResponseDto })
+  @Get(':id/stats-updates')
+  getMarketStatsUpdates(
+    @Param('id') id: string,
+    @Query('init') isInit: boolean,
+  ) {
+    return this.marketService.getMarketStatsUpdateByPolling(id, isInit);
   }
 
   @Post('transaction')
