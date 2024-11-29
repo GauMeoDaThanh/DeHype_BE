@@ -65,7 +65,7 @@ class MarketOptionStatDataDto {
   percentage: string;
 }
 
-class MarketOptionStatDto {
+export class MarketOptionStatDto {
   @ApiProperty({
     description: 'Timestamp for the market option statistics.',
     example: '2024-11-21T11:53:50.169Z',

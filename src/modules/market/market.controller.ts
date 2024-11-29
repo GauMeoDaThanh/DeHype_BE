@@ -44,7 +44,10 @@ import {
 } from './dto/market-detail.dto';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { query } from 'express';
-import { MarketLiveUpdateResponseDto } from './dto/response-market.dto';
+import {
+  MarketLiveUpdateResponseDto,
+  MarketOptionStatDto,
+} from './dto/response-market.dto';
 import { interval, map, Observable } from 'rxjs';
 
 @ApiTags(Tag.MARKET)
@@ -68,7 +71,7 @@ export class MarketController {
   @ApiOperation({
     summary: 'Get market stats updates for a market',
   })
-  @ApiOkResponse({ type: MarketLiveUpdateResponseDto })
+  @ApiOkResponse({ type: [MarketOptionStatDto] })
   @Get(':id/stats-updates')
   getMarketStatsUpdates(
     @Param('id') id: string,
