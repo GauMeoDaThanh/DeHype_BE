@@ -5,4 +5,5 @@ export enum Tag {
   BLOG = 'Blogs',
   MARKET = 'Markets',
   SEARCH = 'Search',
+  CATEGORY = 'Categories',
 }

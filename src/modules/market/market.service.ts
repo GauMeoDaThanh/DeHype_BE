@@ -811,4 +811,16 @@ export class MarketService {
       throw new InternalServerErrorException('Error in get market live update');
     }
   }
+
+//   get_ai_snippets_for_query(query):
+//     headers = {"X-API-Key": YOUR_API_KEY}
+//     params = {"query": query}
+//     return requests.get(
+//         f"https://api.ydc-index.io/search",
+//         params=params,
+//         headers=headers,
+//     ).json()
+    
+// results = get_ai_snippets_for_query("reasons to smile")
+  
 }
