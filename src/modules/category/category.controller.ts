@@ -89,6 +89,19 @@ export class CategoryController {
   @ApiBearerAuth()
   @ApiOkResponse({ type: CreateCategoryResponseDto })
   @ApiInternalServerErrorResponse()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
   @Roles(Role.ADMIN)
   @UseInterceptors(FileInterceptor('file'))
   @Patch(':id/upload')

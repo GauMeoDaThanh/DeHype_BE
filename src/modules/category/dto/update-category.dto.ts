@@ -3,7 +3,7 @@ import { CreateCategoryDto } from './create-category.dto';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class UpdateCategoryDto {
-  @IsOptional()
+  @IsNotEmpty()
   @ApiProperty({ description: 'name of category - optional' })
   name: string;
 }
