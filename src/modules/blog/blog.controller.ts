@@ -61,7 +61,7 @@ export class BlogController {
           type: 'string',
           format: 'binary',
         },
-        blogImageIds: {
+        blogImages: {
           type: 'array',
           items: { type: 'string' },
         },
