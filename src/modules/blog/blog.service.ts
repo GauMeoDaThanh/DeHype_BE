@@ -58,7 +58,7 @@ export class BlogService {
     createBlogDto: CreateBlogDto,
     walletAddress: string,
   ) {
-    const { content, title, blogImages } = createBlogDto;
+    const { content, title, blogImages } = createBlogDto; 
 
     const folder = 'Blog/thumbnail';
     const uploadResult = await this.cloudinaryService.uploadFile(

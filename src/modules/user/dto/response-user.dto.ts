@@ -38,3 +38,42 @@ export class GetUserReponse {
   @ApiProperty({ type: MetaDto })
   meta: MetaDto;
 }
+
+class MarketBetResponse {
+  @ApiProperty({ example: '12341431safa123' })
+  marketId: string;
+
+  @ApiProperty({ example: 'Wil SoL become second BTC?' })
+  marketTitle: string;
+
+  @ApiProperty({ example: 1000 })
+  totalBet: number;
+
+  @ApiProperty({ example: 500 })
+  tokens: number;
+
+  @ApiProperty({ example: 'Yes' })
+  answerKey: string;
+
+  @ApiProperty({ example: '2021-05-20T00:00:00.000Z' })
+  createTime: Date;
+}
+
+class UserInBettingHistoryReponse {
+  @ApiProperty({ example: '12341431safa123' })
+  walletAddress: string;
+
+  @ApiProperty({ example: 'dehype' })
+  username: string;
+
+  @ApiProperty({ example: 'http://example.com/thumbnail.jpg' })
+  avatarUrl: string;
+}
+
+export class UserBettingHistoryResponse {
+  @ApiProperty({ type: UserInBettingHistoryReponse })
+  user: UserInBettingHistoryReponse;
+
+  @ApiProperty({ type: [MarketBetResponse] })
+  bets: MarketBetResponse[];
+}

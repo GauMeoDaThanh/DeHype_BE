@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -19,6 +21,7 @@ import {
   MetaDto,
   UserResultDto,
 } from './dto/response-user.dto';
+import { MarketService } from '../market/market.service';
 
 @Injectable()
 export class UserService {
@@ -28,6 +31,8 @@ export class UserService {
     @InjectRepository(PendingUser)
     private pendingUserRepository: Repository<PendingUser>,
     private cloudinaryService: CloudinaryService,
+    @Inject(forwardRef(() => MarketService))
+    private marketService: MarketService,
   ) {}
 
   isWalletExist = async (walletAddress: string) => {
@@ -182,6 +187,27 @@ export class UserService {
       });
     } catch (error) {
       throw new InternalServerErrorException('Something went wrong');
+    }
+  }
+
+  async getBettingHistory(walletAddress: string) {
+    try {
+      const user = await this.getUser(walletAddress);
+      const bettingHistory =
+        await this.marketService.getUserBettingHistory(walletAddress);
+      return {
+        user: {
+          walletAddress: user.walletAddress,
+          username: user.username,
+          avatarUrl: user.avatarUrl,
+        },
+        bets: bettingHistory,
+      };
+    } catch (error) {
+      console.error('Error in get user betting history:', error);
+      throw new InternalServerErrorException(
+        'Error in get user betting history',
+      );
     }
   }
 }

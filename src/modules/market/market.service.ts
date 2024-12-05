@@ -54,6 +54,7 @@ export class MarketService {
     private marketOptionsStatsRepository: Repository<MarketOptionStats>,
     private redisCacheService: CacheService,
     private categoryService: CategoryService,
+    @Inject(forwardRef(() => UserService))
     private userService: UserService,
   ) {
     // Log the RPC URL and the connection to the cluster
@@ -520,7 +521,8 @@ export class MarketService {
   }
 
   async createMarket(createMarketDto: CreateMarketDto) {
-    const { marketPublicKey, coverUrl, categoryIds, title } = createMarketDto;
+    const { marketPublicKey, coverUrl, categoryIds, title, marketPrivateKey } =
+      createMarketDto;
 
     if (await this.marketRepository.existsBy({ marketId: marketPublicKey }))
       throw new BadRequestException(
@@ -531,6 +533,7 @@ export class MarketService {
       await this.categoryService.findCategoriesByIds(categoryIds);
     const marketInfo = this.marketRepository.create({
       marketId: marketPublicKey,
+      marketPrivateKey,
       categories,
       coverUrl,
       title,
@@ -812,4 +815,65 @@ export class MarketService {
     }
   }
 
+  async getUserBettingHistory(walletAddress: string) {
+    try {
+      const SOLPrice: number = await this.getSOLPrice();
+      const allVoters = await program.account.bettingAccount.all();
+      const currentVoter = allVoters.filter(
+        (voter) => voter.account.voter.toString() === walletAddress,
+      );
+
+      const result = await Promise.all(
+        currentVoter.map(async (voter) => {
+          // Parse to UTC string
+          voter.account.createTime = new Date(
+            voter.account.createTime.toNumber() * 1000,
+          ).toUTCString();
+
+          // Parse tokens to human readable format
+          voter.account.tokens =
+            voter.account.tokens.toNumber() / SOLANA_DECIMALS;
+
+          // Get answer name from answer account
+          const [answerPDA] = PublicKey.findProgramAddressSync(
+            [
+              Buffer.from('answer'),
+              voter.account.marketKey.toArrayLike(Buffer, 'le', 8),
+            ],
+            program.programId,
+          );
+          const answerAccount = (await program.account.answerAccount.fetch(
+            answerPDA,
+          )) as unknown as AnswerAccount;
+          const answerName = answerAccount.answers.find((ans) =>
+            ans.answerKey.eq(voter.account.answerKey),
+          );
+
+          // Get market infomation from market private key
+          const market = await this.marketRepository.findOneBy({
+            marketPrivateKey: voter.account.marketKey.toString(16),
+          });
+
+          voter.account.answerKey = answerName.name;
+          return {
+            marketPublicKey: market.marketId,
+            marketTitle: market.title,
+            totalBet: (voter.account.tokens * SOLPrice).toFixed(2),
+            tokens: voter.account.tokens,
+            answerKey: voter.account.answerKey,
+            createTime: new Date(voter.account.createTime),
+          };
+        }),
+      );
+
+      return result.sort(
+        (a, b) => b.createTime.getTime() - a.createTime.getTime(),
+      );
+    } catch (error) {
+      console.error('Error in get user betting history :', error);
+      throw new InternalServerErrorException(
+        'Error in get user betting history',
+      );
+    }
+  }
 }

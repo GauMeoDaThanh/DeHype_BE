@@ -23,6 +23,10 @@ export class CreateMarketDto {
   @ApiProperty({ description: 'market puclic key' })
   marketPublicKey: string;
 
+  @IsOptional()
+  @ApiProperty({ description: 'market private key' })
+  marketPrivateKey: string;
+
   @IsNotEmpty()
   @ApiProperty({ description: 'title of market' })
   title: string;

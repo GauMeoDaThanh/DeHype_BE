@@ -13,6 +13,9 @@ export class Market {
   @PrimaryColumn()
   marketId: string;
 
+  @Column({ unique: true })
+  marketPrivateKey: string;
+
   @Column()
   title: string;
 

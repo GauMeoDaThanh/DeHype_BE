@@ -98,3 +98,4 @@ export class MarketLiveUpdateResponseDto {
   })
   stats: MarketOptionStatDto[];
 }
+

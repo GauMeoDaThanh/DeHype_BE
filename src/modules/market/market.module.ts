@@ -13,7 +13,7 @@ import { MarketOptionStats } from './entities/market-option-stats.entity';
     TypeOrmModule.forFeature([Market, MarketOptionStats]),
     RedisCacheModule,
     CategoryModule,
-    UserModule,
+    forwardRef(() => UserModule),
   ],
   controllers: [MarketController],
   providers: [MarketService],

@@ -33,7 +33,10 @@ import {
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
-import { GetUserReponse } from './dto/response-user.dto';
+import {
+  GetUserReponse,
+  UserBettingHistoryResponse,
+} from './dto/response-user.dto';
 import { Wallet } from 'src/decorators/current-wallet';
 import { MarketDetailDto } from '../market/dto/market-detail.dto';
 
@@ -147,5 +150,14 @@ export class UserController {
   @Get()
   findAll(@Query() query: string) {
     return this.userService.findAll(query);
+  }
+
+  @ApiOperation({ summary: "get user's betting history" })
+  @ApiOkResponse({ type: UserBettingHistoryResponse })
+  @ApiInternalServerErrorResponse()
+  @Public()
+  @Get(':id/history')
+  getBettingHistory(@Param('id') walletAddress: string) {
+    return this.userService.getBettingHistory(walletAddress);
   }
 }
