@@ -14,7 +14,7 @@ export class Market {
   marketId: string;
 
   @Column({ unique: true })
-  marketPrivateKey: string;
+  marketKey: string;
 
   @Column()
   title: string;

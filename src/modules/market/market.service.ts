@@ -283,6 +283,51 @@ export class MarketService {
     return fetchedVoters;
   }
 
+  async calculateMarketStats(marketPublicKey: PublicKey | string) {
+    const marketAccount = (await program.account.marketAccount.fetch(
+      marketPublicKey,
+    )) as MarketAccount;
+
+    const totalVolume = marketAccount.marketTotalTokens;
+    const [answerPDA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('answer'),
+        marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+      ],
+      program.programId,
+    );
+    const answerAccount = (await program.account.answerAccount.fetch(
+      answerPDA,
+    )) as unknown as AnswerAccount;
+
+    const answerStats = answerAccount.answers.map((answer) => {
+      const totalTokens = answer.answerTotalTokens.toNumber();
+      const totalVolumeNum = totalVolume.toNumber();
+
+      let percentage = 0;
+      if (totalVolumeNum > 0) {
+        percentage = (totalTokens / totalVolumeNum) * 100;
+      }
+      // Set a threshold for displaying small percentages
+      const displayPercentage =
+        percentage >= 1
+          ? percentage.toFixed(2)
+          : Math.floor(percentage).toString();
+
+      return {
+        name: answer.name,
+        totalTokens: answer.answerTotalTokens.toNumber(),
+        totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
+        percentage: displayPercentage,
+      };
+    });
+
+    return {
+      marketId: marketPublicKey,
+      answerStats,
+    };
+  }
+
   async marketStats(marketPublicKey: PublicKey | string, isCache = true) {
     try {
       let marketStats = await this.redisCacheService.get(
@@ -290,48 +335,8 @@ export class MarketService {
       );
       if (marketStats && isCache) return marketStats;
 
-      const marketAccount = (await program.account.marketAccount.fetch(
-        marketPublicKey,
-      )) as MarketAccount;
+      marketStats = await this.calculateMarketStats(marketPublicKey);
 
-      const totalVolume = marketAccount.marketTotalTokens;
-      const [answerPDA] = PublicKey.findProgramAddressSync(
-        [
-          Buffer.from('answer'),
-          marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
-        ],
-        program.programId,
-      );
-      const answerAccount = (await program.account.answerAccount.fetch(
-        answerPDA,
-      )) as unknown as AnswerAccount;
-
-      const answerStats = answerAccount.answers.map((answer) => {
-        const totalTokens = answer.answerTotalTokens.toNumber();
-        const totalVolumeNum = totalVolume.toNumber();
-
-        let percentage = 0;
-        if (totalVolumeNum > 0) {
-          percentage = (totalTokens / totalVolumeNum) * 100;
-        }
-        // Set a threshold for displaying small percentages
-        const displayPercentage =
-          percentage >= 1
-            ? percentage.toFixed(2)
-            : Math.floor(percentage).toString();
-
-        return {
-          name: answer.name,
-          totalTokens: answer.answerTotalTokens.toNumber(),
-          totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
-          percentage: displayPercentage,
-        };
-      });
-
-      marketStats = {
-        marketId: marketPublicKey,
-        answerStats,
-      };
       this.redisCacheService.set(
         `${marketPublicKey}/marketstats`,
         marketStats,
@@ -521,7 +526,7 @@ export class MarketService {
   }
 
   async createMarket(createMarketDto: CreateMarketDto) {
-    const { marketPublicKey, coverUrl, categoryIds, title, marketPrivateKey } =
+    const { marketPublicKey, coverUrl, categoryIds, title, marketKey } =
       createMarketDto;
 
     if (await this.marketRepository.existsBy({ marketId: marketPublicKey }))
@@ -533,7 +538,7 @@ export class MarketService {
       await this.categoryService.findCategoriesByIds(categoryIds);
     const marketInfo = this.marketRepository.create({
       marketId: marketPublicKey,
-      marketPrivateKey,
+      marketKey,
       categories,
       coverUrl,
       title,
@@ -851,7 +856,7 @@ export class MarketService {
 
           // Get market infomation from market private key
           const market = await this.marketRepository.findOneBy({
-            marketPrivateKey: voter.account.marketKey.toString(16),
+            marketKey: voter.account.marketKey.toString(16),
           });
 
           voter.account.answerKey = answerName.name;
