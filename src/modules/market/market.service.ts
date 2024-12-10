@@ -5,6 +5,7 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  OnApplicationBootstrap,
 } from '@nestjs/common';
 import {
   Keypair,
@@ -43,10 +44,10 @@ import { interval, Observable, switchMap } from 'rxjs';
 import { MarketStatsDto } from './dto/market-detail.dto';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
 import { Response } from 'express';
-import { time } from 'console';
+import { log, time } from 'console';
 
 @Injectable()
-export class MarketService {
+export class MarketService implements OnApplicationBootstrap {
   constructor(
     @InjectRepository(Market)
     private marketRepository: Repository<Market>,
@@ -59,6 +60,36 @@ export class MarketService {
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
+  }
+
+  onApplicationBootstrap() {
+    this.initializeProgramListener();
+  }
+
+  async initializeProgramListener() {
+    connection.onLogs(program.programId, async (logs, context) => {
+      // find out the market public key from the logs
+      const transaction = await connection.getParsedTransaction(
+        logs.signature,
+        {
+          commitment: 'confirmed',
+        },
+      );
+      if (transaction) {
+        const marketPublicKeyInTransaction =
+          transaction.transaction.message.accountKeys[4].pubkey.toBase58();
+
+        const updatedMarketStats = await this.calculateMarketStats(
+          marketPublicKeyInTransaction,
+        );
+        await this.redisCacheService.set(
+          `${marketPublicKeyInTransaction}/marketstats`,
+          updatedMarketStats,
+          { ttl: 60 * 10 } as any,
+        );
+        console.log('Market stats updated in Redis');
+      }
+    });
   }
 
   async getMarkets() {
@@ -402,7 +433,6 @@ export class MarketService {
       const votersInMarket = voters.filter((voter) =>
         voter.account.marketKey.eq(marketAccount.marketKey),
       );
-
       // handle logic to fetch desired data
       const result = await Promise.all(
         votersInMarket.map(async (voter) => {
@@ -427,9 +457,16 @@ export class MarketService {
           };
         }),
       );
-      return result.filter(
-        (voter) => Number(voter.totalBet) >= Number(min || 0),
-      );
+
+      const sortedResult = result
+        .filter((voter) => Number(voter.totalBet) >= Number(min || 0))
+        .sort(
+          (a, b) =>
+            new Date(b.account.createTime).getTime() -
+            new Date(a.account.createTime).getTime(),
+        );
+
+      return sortedResult;
     } catch (error) {
       console.log(error);
       throw new InternalServerErrorException(
