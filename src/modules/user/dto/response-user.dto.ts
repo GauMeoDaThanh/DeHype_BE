@@ -46,6 +46,9 @@ class MarketBetResponse {
   @ApiProperty({ example: 'Wil SoL become second BTC?' })
   marketTitle: string;
 
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
+  marketCoverUrl: string;
+
   @ApiProperty({ example: 1000 })
   totalBet: number;
 
@@ -65,9 +68,6 @@ class UserInBettingHistoryReponse {
 
   @ApiProperty({ example: 'dehype' })
   username: string;
-
-  @ApiProperty({ example: 'http://example.com/thumbnail.jpg' })
-  avatarUrl: string;
 }
 
 export class UserBettingHistoryResponse {

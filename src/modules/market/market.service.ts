@@ -907,6 +907,7 @@ export class MarketService implements OnApplicationBootstrap {
           return {
             marketPublicKey: market.marketId,
             marketTitle: market.title,
+            marketCoverUrl: market.coverUrl,
             totalBet: (voter.account.tokens * SOLPrice).toFixed(2),
             tokens: voter.account.tokens,
             answerKey: voter.account.answerKey,

@@ -199,7 +199,6 @@ export class UserService {
         user: {
           walletAddress: user.walletAddress,
           username: user.username,
-          avatarUrl: user.avatarUrl,
         },
         bets: bettingHistory,
       };
