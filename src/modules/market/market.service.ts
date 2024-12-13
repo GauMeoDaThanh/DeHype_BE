@@ -79,15 +79,22 @@ export class MarketService implements OnApplicationBootstrap {
         const marketPublicKeyInTransaction =
           transaction.transaction.message.accountKeys[4].pubkey.toBase58();
 
-        const updatedMarketStats = await this.calculateMarketStats(
-          marketPublicKeyInTransaction,
-        );
-        await this.redisCacheService.set(
-          `${marketPublicKeyInTransaction}/marketstats`,
-          updatedMarketStats,
-          { ttl: 60 * 10 } as any,
-        );
-        console.log('Market stats updated in Redis');
+        // Because get market publickey is fixed, using this to check if that is the truth market public key
+        const isMarketExist = await this.marketRepository.existsBy({
+          marketId: marketPublicKeyInTransaction,
+        });
+
+        if (isMarketExist) {
+          const updatedMarketStats = await this.calculateMarketStats(
+            marketPublicKeyInTransaction,
+          );
+          await this.redisCacheService.set(
+            `${marketPublicKeyInTransaction}/marketstats`,
+            updatedMarketStats,
+            { ttl: 60 * 10 } as any,
+          );
+          console.log('Market stats updated in Redis');
+        }
       }
     });
   }
