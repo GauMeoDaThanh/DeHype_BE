@@ -43,8 +43,9 @@ import { UserService } from '../user/user.service';
 import { interval, Observable, switchMap } from 'rxjs';
 import { MarketStatsDto } from './dto/market-detail.dto';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
-import { Response } from 'express';
+import { response, Response } from 'express';
 import { log, time } from 'console';
+import { writeFileSync } from 'fs';
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -75,6 +76,10 @@ export class MarketService implements OnApplicationBootstrap {
           commitment: 'confirmed',
         },
       );
+      // console.log('start write file');
+      // writeFileSync('onLogBetting.json', JSON.stringify(transaction, null, 2));
+      // console.log('end write file');
+
       if (transaction) {
         const marketPublicKeyInTransaction =
           transaction.transaction.message.accountKeys[4].pubkey.toBase58();
@@ -124,16 +129,14 @@ export class MarketService implements OnApplicationBootstrap {
           return {
             publicKey,
             ...account,
-            view: market.view,
-            like: market.like_count,
-            createdAt: market.createdAt,
+            view: market ? market.view : 0,
+            like: market ? market.like_count : 0,
+            // createdAt: market.createdAt,
             totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
             participants: votersInMarket.length,
           };
         }),
       );
-
-      // return marketsStats;
 
       // Return according to trending
       return marketsStats.sort((a, b): number => {
@@ -145,8 +148,11 @@ export class MarketService implements OnApplicationBootstrap {
         );
       });
     } catch (error) {
-      console.error('Error fetching market stats:', error);
-      throw new InternalServerErrorException('Failed to fetch market stats');
+      console.error('Error fetching all markets:', error);
+      throw new InternalServerErrorException(
+        'Failed to fetch all market: ',
+        error,
+      );
     }
   }
   async getMarket(marketPublicKey: string) {
