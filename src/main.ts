@@ -58,7 +58,9 @@ async function bootstrap() {
     { name: Tag.CATEGORY },
   ];
 
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: { persistAuthorization: true },
+  });
   console.log(`Server running on port ${port}`);
 
   // Bind to all IPv4 addresses

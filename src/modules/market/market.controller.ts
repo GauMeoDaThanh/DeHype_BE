@@ -11,12 +11,13 @@ import {
   Sse,
   Res,
   Req,
+  UploadedFile,
 } from '@nestjs/common';
 import { MarketService } from './market.service';
 import {
   CreateBetDto,
-  CreateMarketDto,
   CreateMarketTransactionDto,
+  CreateMarketDto,
   GetVoterHistoryQueryDto,
 } from './dto/create-market.dto';
 import { Public } from 'src/decorators/public-route';
@@ -31,6 +32,9 @@ import {
   ApiParam,
   ApiQuery,
   ApiExcludeEndpoint,
+  ApiConsumes,
+  ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Tag } from 'src/constants/api-tag.enum';
 import { PublicKey } from '@solana/web3.js';
@@ -42,13 +46,15 @@ import {
   MarketStatsDto,
   VoterListDto,
 } from './dto/market-detail.dto';
-import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
-import { query } from 'express';
 import {
   MarketLiveUpdateResponseDto,
   MarketOptionStatDto,
 } from './dto/response-market.dto';
-import { interval, map, Observable } from 'rxjs';
+import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Role } from 'src/constants/role.enum';
+import { Roles } from 'src/decorators/role-route';
+import { UploadImageReponseDto } from '../blog/dto/response-blog';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -92,8 +98,37 @@ export class MarketController {
     return this.marketService.createMarketTransaction(createMarketDto);
   }
 
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'upload cover of market' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiCreatedResponse({
+    description: 'Successfull Operation',
+    type: UploadImageReponseDto,
+  })
+  @Roles(Role.ADMIN)
+  @Post('upload')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadImage(
+    @UploadedFile(new FileValidationPipe()) image: Express.Multer.File,
+  ) {
+    return this.marketService.uploadMarketCover(image);
+  }
+
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'add market to database' })
-  @Public()
+  @ApiBody({ type: CreateMarketDto })
+  @Roles(Role.ADMIN)
   @Post()
   create(@Body() createMarketDto: CreateMarketDto) {
     return this.marketService.createMarket(createMarketDto);

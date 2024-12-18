@@ -15,8 +15,8 @@ import {
 } from '@solana/web3.js';
 import {
   CreateBetDto,
-  CreateMarketDto,
   CreateMarketTransactionDto,
+  CreateMarketDto,
   GetVoterHistoryQueryDto,
   ResolveMarketDto,
 } from './dto/create-market.dto';
@@ -46,6 +46,7 @@ import { MarketOptionStats } from './entities/market-option-stats.entity';
 import { response, Response } from 'express';
 import { log, time } from 'console';
 import { writeFileSync } from 'fs';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -58,6 +59,7 @@ export class MarketService implements OnApplicationBootstrap {
     private categoryService: CategoryService,
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
+    private cloudinaryService: CloudinaryService,
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
@@ -575,25 +577,62 @@ export class MarketService implements OnApplicationBootstrap {
     }
   }
 
-  async createMarket(createMarketDto: CreateMarketDto) {
-    const { marketPublicKey, coverUrl, categoryIds, title, marketKey } =
-      createMarketDto;
-
-    if (await this.marketRepository.existsBy({ marketId: marketPublicKey }))
-      throw new BadRequestException(
-        `Already have market with id ${marketPublicKey}`,
+  async uploadMarketCover(coverUrl: Express.Multer.File) {
+    try {
+      const folder = 'market';
+      const uploadResult = await this.cloudinaryService.uploadFile(
+        coverUrl,
+        folder,
       );
 
-    const categories =
-      await this.categoryService.findCategoriesByIds(categoryIds);
-    const marketInfo = this.marketRepository.create({
-      marketId: marketPublicKey,
-      marketKey,
-      categories,
-      coverUrl,
-      title,
-    });
-    return await this.marketRepository.save(marketInfo);
+      return {
+        public_id: uploadResult.public_id,
+        url: uploadResult.url,
+      };
+    } catch (error) {
+      console.error('Error in upload market cover to cloudinary:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in upload market cover to cloudinary',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in upload market cover to cloudinary',
+      );
+    }
+  }
+
+  async createMarket(createMarketDto: CreateMarketDto) {
+    try {
+      const { marketPublicKey, categoryIds, title, marketKey, coverUrl } =
+        createMarketDto;
+
+      if (await this.marketRepository.existsBy({ marketId: marketPublicKey }))
+        throw new BadRequestException(
+          `Already have market with id ${marketPublicKey}`,
+        );
+
+      const categories =
+        await this.categoryService.findCategoriesByIds(categoryIds);
+      const marketInfo = this.marketRepository.create({
+        marketId: marketPublicKey,
+        marketKey,
+        coverUrl,
+        categories,
+        title,
+      });
+      return await this.marketRepository.save(marketInfo);
+    } catch (error) {
+      console.error('Error in add market to database:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in add market to database',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException('Error in add market to database');
+    }
   }
 
   async resolveMarket(resolveMarketDto: ResolveMarketDto): Promise<string> {

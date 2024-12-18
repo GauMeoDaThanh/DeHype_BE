@@ -7,12 +7,14 @@ import { RedisCacheModule } from '../shared/cache/cache.module';
 import { CategoryModule } from '../category/category.module';
 import { UserModule } from '../user/user.module';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Market, MarketOptionStats]),
     RedisCacheModule,
     CategoryModule,
+    CloudinaryModule,
     forwardRef(() => UserModule),
   ],
   controllers: [MarketController],

@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { PublicKey } from '@solana/web3.js';
 import { BN } from '@coral-xyz/anchor';
 import { IsNotEmpty, IsNumber, IsOptional, IsUrl } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 export class CreateMarketTransactionDto {
   @ApiProperty({ description: 'The name of the event' })
@@ -19,6 +19,13 @@ export class CreateMarketTransactionDto {
 }
 
 export class CreateMarketDto {
+  // @ApiProperty({
+  //   type: 'string',
+  //   format: 'binary',
+  //   description: 'Cover image of the market',
+  // })
+  // file: Express.Multer.File;
+
   @IsNotEmpty()
   @ApiProperty({ description: 'market puclic key' })
   marketPublicKey: string;
@@ -32,11 +39,11 @@ export class CreateMarketDto {
   title: string;
 
   @IsNotEmpty()
-  @IsUrl()
-  @ApiProperty({ description: 'market cover url' })
+  @ApiProperty({ description: 'cover image url' })
   coverUrl: string;
 
   @IsNotEmpty()
+  @IsNumber({}, { each: true })
   @ApiProperty({ description: 'category list' })
   categoryIds: number[];
 }
