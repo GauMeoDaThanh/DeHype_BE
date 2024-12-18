@@ -22,6 +22,8 @@ import {
   UserResultDto,
 } from './dto/response-user.dto';
 import { MarketService } from '../market/market.service';
+import { program } from 'src/constants';
+import { getBettingAccounts } from 'src/helpers/utils';
 
 @Injectable()
 export class UserService {
@@ -171,12 +173,32 @@ export class UserService {
 
     return response;
   }
-
   async findOne(walletAddress: string) {
+    const bettingAccounts = await getBettingAccounts();
+    const bettingAccountsOfUser = bettingAccounts.filter(
+      (account) => account.voter.toBase58() === walletAddress,
+    );
+
+    const joinedMarkets = new Set(
+      bettingAccountsOfUser.map((account) => account.marketKey.toString(16)),
+    ).size;
+
+    const totalAmount = bettingAccountsOfUser.reduce(
+      (sum, account) => sum + account.tokens,
+      0,
+    );
+
+    const profitLoss = 0;
+
     const user = await this.getUser(walletAddress);
 
     if (user === null) throw new NotFoundException('Invalid user address');
-    return instanceToPlain(user);
+    return {
+      ...instanceToPlain(user),
+      joinedMarkets,
+      totalAmount,
+      profitLoss,
+    };
   }
 
   async update(walletAddress: string, updateUserDto: UpdateUserDto) {

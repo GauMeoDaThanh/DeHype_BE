@@ -1,4 +1,4 @@
-import { hermesConnection } from 'src/constants';
+import { hermesConnection, program, SOLANA_DECIMALS } from 'src/constants';
 
 export async function getSolPriceInUSD() {
   const pricesInfo = (
@@ -10,4 +10,16 @@ export async function getSolPriceInUSD() {
   return (
     Number(pricesInfo.price) / Math.pow(10, Math.abs(Number(pricesInfo.expo)))
   );
+}
+
+export async function getBettingAccounts() {
+  const bettingAccounts: any = await program.account.bettingAccount.all();
+  const decryptBettingAccounts = bettingAccounts.map((account) => {
+    return {
+      ...account.account,
+      tokens: account.account.tokens / SOLANA_DECIMALS,
+      createTime: new Date(account.account.createTime.toNumber() * 1000),
+    };
+  });
+  return decryptBettingAccounts;
 }

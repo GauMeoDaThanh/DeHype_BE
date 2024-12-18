@@ -31,15 +31,6 @@ export class User {
   })
   avatarUrl: string;
 
-  @Column({ default: 0 })
-  joinedMarkets: number;
-
-  @Column({ default: 0 })
-  profitLoss: number;
-
-  @Column({ default: 0 })
-  totalAmount: number;
-
   @CreateDateColumn()
   joinedAt: Date;
 

@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { program, SOLANA_DECIMALS } from 'src/constants';
 import { CacheService } from '../shared/cache/cache.service';
-import { getSolPriceInUSD } from 'src/helpers/utils';
+import { getBettingAccounts, getSolPriceInUSD } from 'src/helpers/utils';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
@@ -38,21 +38,9 @@ export class StatisticsService {
     }
   }
 
-  private async getBettingAccounts() {
-    const bettingAccounts: any = await program.account.bettingAccount.all();
-    const decryptBettingAccounts = bettingAccounts.map((account) => {
-      return {
-        ...account.account,
-        tokens: account.account.tokens / SOLANA_DECIMALS,
-        createTime: new Date(account.account.createTime.toNumber() * 1000),
-      };
-    });
-    return decryptBettingAccounts;
-  }
-
   async getMostBettingLeaderboard() {
     try {
-      const bettingAccounts = await this.getBettingAccounts();
+      const bettingAccounts = await getBettingAccounts();
       const groupByUser = bettingAccounts.reduce((acc, account) => {
         if (!acc[account.voter]) {
           acc[account.voter] = 0;
@@ -138,7 +126,7 @@ export class StatisticsService {
 
   async getTransactionStatistics(query: QueryStatisticDto) {
     try {
-      const bettingAccounts = await this.getBettingAccounts();
+      const bettingAccounts = await getBettingAccounts();
       const result = {};
 
       bettingAccounts.forEach((account) => {
@@ -176,7 +164,7 @@ export class StatisticsService {
 
   async getTransactionVolumeStatistics(query: QueryStatisticDto) {
     try {
-      const bettingAccounts = await this.getBettingAccounts();
+      const bettingAccounts = await getBettingAccounts();
       const result = {};
 
       bettingAccounts.forEach((account) => {
