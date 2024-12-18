@@ -56,6 +56,7 @@ async function bootstrap() {
     { name: Tag.BLOG },
     { name: Tag.SEARCH },
     { name: Tag.CATEGORY },
+    { name: Tag.STATISTICS },
   ];
 
   SwaggerModule.setup('api', app, document, {

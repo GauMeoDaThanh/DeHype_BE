@@ -15,6 +15,6 @@ import { MarketModule } from '../market/market.module';
   ],
   controllers: [UserController],
   providers: [UserService],
-  exports: [UserService],
+  exports: [UserService, TypeOrmModule],
 })
 export class UserModule {}

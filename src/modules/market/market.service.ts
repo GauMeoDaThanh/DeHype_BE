@@ -47,6 +47,7 @@ import { response, Response } from 'express';
 import { log, time } from 'console';
 import { writeFileSync } from 'fs';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
+import { getSolPriceInUSD } from 'src/helpers/utils';
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -404,15 +405,7 @@ export class MarketService implements OnApplicationBootstrap {
 
       if (cachedPrice) return cachedPrice as number;
 
-      const pricesInfo = (
-        await hermesConnection.getLatestPriceUpdates([
-          '0xef0d8b6fda2ceba41da15d4095d1da392a0d2f8ed0c6c7bc0f4cfac8c280b56d',
-        ])
-      ).parsed[0].price;
-
-      const priceInUSD =
-        Number(pricesInfo.price) /
-        Math.pow(10, Math.abs(Number(pricesInfo.expo)));
+      const priceInUSD = await getSolPriceInUSD();
 
       this.redisCacheService.set('sol_price', priceInUSD, {
         ttl: 60 * 10,

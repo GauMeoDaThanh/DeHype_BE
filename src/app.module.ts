@@ -18,6 +18,7 @@ import { RedisCacheModule } from './modules/shared/cache/cache.module';
 import { FavMarketModule } from './modules/fav-market/fav-market.module';
 import { CategoryModule } from './modules/category/category.module';
 import { SearchModule } from './modules/search/search.module';
+import { StatisticsModule } from './modules/statistics/statistics.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { SearchModule } from './modules/search/search.module';
     FavMarketModule,
     CategoryModule,
     SearchModule,
+    StatisticsModule,
   ],
   controllers: [AppController],
   providers: [
