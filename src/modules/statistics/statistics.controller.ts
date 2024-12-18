@@ -13,6 +13,7 @@ import {
   ApiBearerAuth,
   ApiInternalServerErrorResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -34,6 +35,7 @@ import {
 export class StatisticsController {
   constructor(private readonly statisticsService: StatisticsService) {}
 
+  @ApiOperation({ summary: 'Get most betting leaderboard' })
   @Public()
   @Get('/most-betting')
   @ApiInternalServerErrorResponse()
@@ -42,12 +44,14 @@ export class StatisticsController {
     return this.statisticsService.getMostBettingLeaderboard();
   }
 
+  @ApiOperation({ summary: 'Get most profit leaderboard' })
   @Public()
   @Get('/most-profit')
   getMostProfitLeaderboard() {
     return this.statisticsService.getMostProfitLeaderboard();
   }
 
+  @ApiOperation({ summary: 'Get member statistics by period' })
   @ApiBearerAuth()
   @Roles(Role.ADMIN)
   @ApiInternalServerErrorResponse()
@@ -57,6 +61,7 @@ export class StatisticsController {
     return this.statisticsService.getMemberStatistics(query);
   }
 
+  @ApiOperation({ summary: 'Get transaction statistics by period' })
   @ApiBearerAuth()
   @Roles(Role.ADMIN)
   @ApiInternalServerErrorResponse()
@@ -66,6 +71,7 @@ export class StatisticsController {
     return this.statisticsService.getTransactionStatistics(query);
   }
 
+  @ApiOperation({ summary: 'Get transaction volume statistics by period' })
   @ApiBearerAuth()
   @Roles(Role.ADMIN)
   @ApiInternalServerErrorResponse()
