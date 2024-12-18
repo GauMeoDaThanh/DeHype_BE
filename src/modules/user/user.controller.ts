@@ -68,7 +68,7 @@ export class UserController {
     status: 404,
     description: 'Not Found - Invalid user address',
   })
-  @ApiBearerAuth()
+  @Public()
   @Get(':id')
   findOne(@Param('id') walletAddress: string) {
     return this.userService.findOne(walletAddress);
