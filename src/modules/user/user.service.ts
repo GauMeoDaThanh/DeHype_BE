@@ -10,7 +10,7 @@ import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto, UpdateUserRoleDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { ILike, In, IsNull, Repository } from 'typeorm';
+import { Brackets, ILike, In, IsNull, Repository } from 'typeorm';
 import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -140,9 +140,9 @@ export class UserService {
 
   async findAll(query: string) {
     const { filter, sort } = aqp(query);
-    const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
+    const allowedSortColumns = ['id', 'joinedAt', 'title', 'role'];
 
-    let { pageSize, current, username, walletAddress, ...restFilter } = filter;
+    let { pageSize, current, role, q, ...restFilter } = filter;
     if (!pageSize) pageSize = 10;
     if (!current) current = 1;
     if (sort) {
@@ -152,21 +152,46 @@ export class UserService {
           throw new BadRequestException(`Invalid sort column: ${field}`);
       });
     }
+    const queryBuilder = this.usersRepository.createQueryBuilder('user');
 
-    const where: any = { ...restFilter };
-    if (username) {
-      where.username = ILike(`%${username}%`);
+    // perform filtering with a and (b or c) and sorting
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
     }
-    if (walletAddress) {
-      where.walletAddress = ILike(`%${walletAddress}%`);
+
+    if (q) {
+      queryBuilder.andWhere(
+        new Brackets((qb) => {
+          qb.orWhere('user.username ILIKE :username', {
+            username: `%${q}%`,
+          });
+          qb.orWhere('user.walletAddress ILIKE :walletAddress', {
+            walletAddress: `%${q}%`,
+          });
+        }),
+      );
     }
-    const [results, totalItems] = await this.usersRepository.findAndCount({
-      select: ['walletAddress', 'username', 'avatarUrl', 'role'],
-      where,
-      order: sort,
-      take: pageSize,
-      skip: (current - 1) * pageSize,
-    });
+
+    if (sort) {
+      Object.keys(sort).forEach((field) => {
+        const direction = sort[field];
+        queryBuilder.addOrderBy(
+          `user.${field}`,
+          direction === 1 ? 'ASC' : 'DESC',
+        );
+      });
+    }
+
+    const [results, totalItems] = await queryBuilder
+      .select([
+        'user.walletAddress',
+        'user.username',
+        'user.avatarUrl',
+        'user.role',
+      ])
+      .skip((current - 1) * pageSize)
+      .take(pageSize)
+      .getManyAndCount();
 
     const meta: MetaDto = {
       current: current,

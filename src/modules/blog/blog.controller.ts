@@ -188,7 +188,7 @@ export class BlogController {
     example: '-createdAt',
   })
   @ApiQuery({
-    name: 'title',
+    name: 'q',
     required: false,
     description: 'filter by title',
   })

@@ -149,14 +149,9 @@ export class UserController {
     example: '-createdAt',
   })
   @ApiQuery({
-    name: 'username',
+    name: 'q',
     required: false,
-    description: 'filter by username',
-  })
-  @ApiQuery({
-    name: 'walletAddress',
-    required: false,
-    description: 'filter by wallet address',
+    description: 'filter by username or wallet address',
   })
   @ApiQuery({
     name: 'role',

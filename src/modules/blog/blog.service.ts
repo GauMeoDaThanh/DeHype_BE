@@ -176,7 +176,7 @@ export class BlogService {
     const { filter, sort } = aqp(query);
     const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
 
-    let { pageSize, current, title, ...restFilter } = filter;
+    let { pageSize, current, q, ...restFilter } = filter;
 
     if (!pageSize) pageSize = 10;
     if (!current) current = 1;
@@ -189,8 +189,8 @@ export class BlogService {
     }
 
     const where: any = { ...restFilter };
-    if (title) {
-      where.title = ILike(`%${title}%`);
+    if (q) {
+      where.title = ILike(`%${q}%`);
     }
 
     const [results, totalItems] = await this.blogRepository.findAndCount({
