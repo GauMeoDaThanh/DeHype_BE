@@ -37,3 +37,14 @@ export class MostBettingLeaderboardResponse {
   @ApiProperty({ description: 'total betting' })
   totalBetting: number;
 }
+
+export class GeneralStatisticReponse {
+  @ApiProperty({ description: 'Total member' })
+  totalMembers: number;
+
+  @ApiProperty({ description: 'Total markets created' })
+  totalMarket: number;
+
+  @ApiProperty({ description: 'Total transactions volume' })
+  totalVolumes: number;
+}

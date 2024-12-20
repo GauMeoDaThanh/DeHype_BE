@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { QueryStatisticDto } from './dto/query-statistic.dto';
+import { reduce } from 'rxjs';
 
 @Injectable()
 export class StatisticsService {
@@ -35,6 +36,31 @@ export class StatisticsService {
     } catch (error) {
       console.error('Error in get SOL prices:', error);
       throw new InternalServerErrorException('Error in get SOL prices');
+    }
+  }
+
+  async getGeneralStatistics() {
+    try {
+      const totalMarkets = await program.account.marketAccount.all();
+      const totalUsers = await this.userRepository.count();
+      const bettingAccounts = await getBettingAccounts();
+      const totalVolumes = bettingAccounts.reduce(
+        (acc, account) => acc + account.tokens,
+        0,
+      );
+
+      return { totalMarkets: totalMarkets.length, totalUsers, totalVolumes };
+    } catch (error) {
+      console.error('Error in general statistic:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in general statistic',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in general statistic',
+      );
     }
   }
 

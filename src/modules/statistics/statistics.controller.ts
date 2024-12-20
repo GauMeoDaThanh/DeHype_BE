@@ -24,6 +24,7 @@ import { Roles } from 'src/decorators/role-route';
 import { QueryStatisticDto } from './dto/query-statistic.dto';
 import { query } from 'express';
 import {
+  GeneralStatisticReponse,
   MemberStatisticsResponse,
   MostBettingLeaderboardResponse,
   TransactionStatisticsResponse,
@@ -79,5 +80,15 @@ export class StatisticsController {
   @Get('/transactions-volume')
   getTransactionVolumeStatistics(@Query() query: QueryStatisticDto) {
     return this.statisticsService.getTransactionVolumeStatistics(query);
+  }
+
+  @ApiOperation({ summary: 'Get general statistics' })
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN)
+  @ApiInternalServerErrorResponse()
+  @ApiOkResponse({ type: [GeneralStatisticReponse] })
+  @Get()
+  getGeneralStatistics() {
+    return this.statisticsService.getGeneralStatistics();
   }
 }
