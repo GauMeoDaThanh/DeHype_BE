@@ -10,7 +10,7 @@ import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Blog } from './entities/blog.entity';
-import { Repository } from 'typeorm';
+import { ILike, Repository } from 'typeorm';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { marked } from 'marked';
 import DOMPurify from 'isomorphic-dompurify';
@@ -58,7 +58,7 @@ export class BlogService {
     createBlogDto: CreateBlogDto,
     walletAddress: string,
   ) {
-    const { content, title, blogImages } = createBlogDto; 
+    const { content, title, blogImages } = createBlogDto;
 
     const folder = 'Blog/thumbnail';
     const uploadResult = await this.cloudinaryService.uploadFile(
@@ -176,7 +176,7 @@ export class BlogService {
     const { filter, sort } = aqp(query);
     const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
 
-    let { pageSize, current, ...restFilter } = filter;
+    let { pageSize, current, title, ...restFilter } = filter;
 
     if (!pageSize) pageSize = 10;
     if (!current) current = 1;
@@ -188,9 +188,14 @@ export class BlogService {
       });
     }
 
+    const where: any = { ...restFilter };
+    if (title) {
+      where.title = ILike(`%${title}%`);
+    }
+
     const [results, totalItems] = await this.blogRepository.findAndCount({
       relations: ['user'],
-      where: { ...restFilter },
+      where,
       order: sort,
       take: pageSize,
       skip: (current - 1) * pageSize,

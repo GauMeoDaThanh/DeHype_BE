@@ -187,6 +187,11 @@ export class BlogController {
     description: 'Current page',
     example: '-createdAt',
   })
+  @ApiQuery({
+    name: 'title',
+    required: false,
+    description: 'filter by title',
+  })
   @Public()
   @Get()
   findAll(@Query() query: string) {
