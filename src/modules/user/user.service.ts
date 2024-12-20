@@ -7,10 +7,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { CreatePendingUserDto, CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto, UpdateUserRoleDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { In, IsNull, Repository } from 'typeorm';
+import { ILike, In, IsNull, Repository } from 'typeorm';
 import { PendingUser } from './entities/pendingUser.entity';
 import { classToPlain, instanceToPlain } from 'class-transformer';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
@@ -106,6 +106,17 @@ export class UserService {
     return null;
   }
 
+  async updateRole(
+    walletAddress: string,
+    updateUserRoleDto: UpdateUserRoleDto,
+  ) {
+    const user = await this.getUser(walletAddress);
+
+    if (user === null) throw new NotFoundException('Invalid user address');
+    const { role } = updateUserRoleDto;
+    return await this.usersRepository.update(walletAddress, { role });
+  }
+
   async uploadAvatar(file: Express.Multer.File, user: any) {
     const { walletAddress } = user;
     const userInfo = await this.getUser(walletAddress);
@@ -131,8 +142,7 @@ export class UserService {
     const { filter, sort } = aqp(query);
     const allowedSortColumns = ['id', 'createdAt', 'title', 'updatedAt'];
 
-    let { pageSize, current, ...restFilter } = filter;
-
+    let { pageSize, current, username, walletAddress, ...restFilter } = filter;
     if (!pageSize) pageSize = 10;
     if (!current) current = 1;
     if (sort) {
@@ -143,21 +153,20 @@ export class UserService {
       });
     }
 
+    const where: any = { ...restFilter };
+    if (username) {
+      where.username = ILike(`%${username}%`);
+    }
+    if (walletAddress) {
+      where.walletAddress = ILike(`%${walletAddress}%`);
+    }
     const [results, totalItems] = await this.usersRepository.findAndCount({
-      relations: ['blockUser'],
-      where: { ...restFilter },
+      select: ['walletAddress', 'username', 'avatarUrl', 'role'],
+      where,
       order: sort,
       take: pageSize,
       skip: (current - 1) * pageSize,
     });
-
-    const customizedResults: UserResultDto[] = results.map((user) => ({
-      walletAddress: user.walletAddress,
-      username: user.username,
-      avatarUrl: user.avatarUrl,
-      role: user.role,
-      isBlocked: user.blockUser ? true : false,
-    }));
 
     const meta: MetaDto = {
       current: current,
@@ -167,12 +176,13 @@ export class UserService {
     };
 
     const response: GetUserReponse = {
-      users: customizedResults,
+      users: results,
       meta: meta,
     };
 
     return response;
   }
+
   async findOne(walletAddress: string) {
     const bettingAccounts = await getBettingAccounts();
     const bettingAccountsOfUser = bettingAccounts.filter(

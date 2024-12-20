@@ -12,9 +12,6 @@ export class UserResultDto {
 
   @ApiProperty({ example: 'user' })
   role: string;
-
-  @ApiProperty({ example: false })
-  isBlocked: boolean;
 }
 
 export class MetaDto {

@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto, UpdateUserRoleDto } from './dto/update-user.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { Public } from 'src/decorators/public-route';
@@ -39,6 +39,8 @@ import {
 } from './dto/response-user.dto';
 import { Wallet } from 'src/decorators/current-wallet';
 import { MarketDetailDto } from '../market/dto/market-detail.dto';
+import { Role } from 'src/constants/role.enum';
+import { Roles } from 'src/decorators/role-route';
 
 @ApiTags(Tag.USER)
 @Controller('users')
@@ -131,7 +133,7 @@ export class UserController {
     return this.userService.update(walletAddress, updateUserDto);
   }
 
-  // @ApiBearerAuth()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'get all users information' })
   @ApiOkResponse({ type: GetUserReponse })
   @ApiQuery({ name: 'current', required: false, description: 'Current page' })
@@ -146,7 +148,22 @@ export class UserController {
     description: 'sort by',
     example: '-createdAt',
   })
-  @Public()
+  @ApiQuery({
+    name: 'username',
+    required: false,
+    description: 'filter by username',
+  })
+  @ApiQuery({
+    name: 'walletAddress',
+    required: false,
+    description: 'filter by wallet address',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    description: 'filter by role',
+  })
+  @Roles(Role.ADMIN)
   @Get()
   findAll(@Query() query: string) {
     return this.userService.findAll(query);
@@ -159,5 +176,18 @@ export class UserController {
   @Get(':id/history')
   getBettingHistory(@Param('id') walletAddress: string) {
     return this.userService.getBettingHistory(walletAddress);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'update user role' })
+  @ApiOkResponse({ description: 'Successful operation' })
+  @ApiNotFoundResponse({ description: 'Invalid user address' })
+  @Roles(Role.ADMIN)
+  @Patch(':id/role')
+  updateRole(
+    @Param('id') walletAddress: string,
+    @Body() updateUserRoleDto: UpdateUserRoleDto,
+  ) {
+    return this.userService.updateRole(walletAddress, updateUserRoleDto);
   }
 }
