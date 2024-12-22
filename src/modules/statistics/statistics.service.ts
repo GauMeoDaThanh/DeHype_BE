@@ -81,16 +81,20 @@ export class StatisticsService {
             select: ['username', 'avatarUrl', 'walletAddress'],
             where: { walletAddress: key },
           });
-          return {
-            ...user,
-            totalBetting: groupByUser[key],
-          };
+          if (user) {
+            return {
+              ...user,
+              totalBetting: groupByUser[key],
+            };
+          } else {
+            return null;
+          }
         }),
       );
 
       return result
-        .filter((user) => user.totalBetting > 0)
-        .sort((a, b) => b.totalBetting - a.totalBetting);
+        .filter((user) => user?.totalBetting > 0)
+        .sort((a, b) => b?.totalBetting - a?.totalBetting);
     } catch (error) {
       console.error('Error in get most betting leader board:', error);
       if (error instanceof Error) {
