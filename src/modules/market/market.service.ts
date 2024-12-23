@@ -450,11 +450,13 @@ export class MarketService implements OnApplicationBootstrap {
           const answerName = answerAccount.answers.find((ans) =>
             ans.answerKey.eq(voter.account.answerKey),
           );
-          voter.account.answerKey = answerName.name;
+          voter.account.answerName = answerName.name;
           return {
             publicKey: voter.publicKey,
-            username: voterInfo.username,
-            avatarUrl: voterInfo.avatarUrl,
+            username: voterInfo ? voterInfo.username : voter.publicKey,
+            avatarUrl: voterInfo
+              ? voterInfo.avatarUrl
+              : 'https://res.cloudinary.com/diwacy6yr/image/upload/v1728441530/User/default.png',
             totalBet: (voter.account.tokens * SOLPrice).toFixed(2),
             account: voter.account,
           };

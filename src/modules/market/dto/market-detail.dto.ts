@@ -1,7 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { IsArray, ArrayMinSize, IsString, IsNotEmpty } from 'class-validator';
 
 class AnswerStatsDto {
+  @ApiProperty({ description: 'answer key', example: '1' })
+  key: string;
+
   @ApiProperty({ example: 'Yes' })
   name: string;
 
@@ -99,11 +102,14 @@ class VoterAccountDto {
   @ApiProperty({ example: '0bff', description: 'Unique key for the market' })
   marketKey: string;
 
+  @ApiProperty({ description: 'Unique key for the answer', example: '1' })
+  answerKey: string;
+
   @ApiProperty({
     example: 'Yes',
     description: 'The answer key chosen by the voter',
   })
-  answerKey: string;
+  answerName: string;
 
   @ApiProperty({
     example: 'FECRGdR7EBXD7',
