@@ -79,29 +79,23 @@ export class MarketService implements OnApplicationBootstrap {
           commitment: 'confirmed',
         },
       );
-      // console.log('start write file');
-      // writeFileSync('onLogBetting.json', JSON.stringify(transaction, null, 2));
-      // console.log('end write file');
-
       if (transaction) {
-        const marketPublicKeyInTransaction =
-          transaction.transaction.message.accountKeys[4].pubkey.toBase58();
+        for (const accountKey of transaction.transaction.message.accountKeys) {
+          const accountKeyBase58 = accountKey.pubkey.toBase58();
+          const isMarketExist = await this.marketRepository.existsBy({
+            marketId: accountKeyBase58,
+          });
 
-        // Because get market publickey is fixed, using this to check if that is the truth market public key
-        const isMarketExist = await this.marketRepository.existsBy({
-          marketId: marketPublicKeyInTransaction,
-        });
-
-        if (isMarketExist) {
-          const updatedMarketStats = await this.calculateMarketStats(
-            marketPublicKeyInTransaction,
-          );
-          await this.redisCacheService.set(
-            `${marketPublicKeyInTransaction}/marketstats`,
-            updatedMarketStats,
-            { ttl: 60 * 10 } as any,
-          );
-          console.log('Market stats updated in Redis');
+          if (isMarketExist) {
+            const updatedMarketStats =
+              await this.calculateMarketStats(accountKeyBase58);
+            await this.redisCacheService.set(
+              `${accountKeyBase58}/marketstats`,
+              updatedMarketStats,
+              { ttl: 60 * 10 } as any,
+            );
+            console.log('Market stats updated in Redis');
+          }
         }
       }
     });
@@ -362,6 +356,7 @@ export class MarketService implements OnApplicationBootstrap {
           : Math.floor(percentage).toString();
 
       return {
+        key: answer.answerKey,
         name: answer.name,
         totalTokens: answer.answerTotalTokens.toNumber(),
         totalVolume: totalVolume.toNumber() / SOLANA_DECIMALS,
