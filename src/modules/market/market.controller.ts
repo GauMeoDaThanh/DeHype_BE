@@ -55,6 +55,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Role } from 'src/constants/role.enum';
 import { Roles } from 'src/decorators/role-route';
 import { UploadImageReponseDto } from '../blog/dto/response-blog';
+import { UpdateMarketCategoryDto } from './dto/update-market.dto';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -132,6 +133,21 @@ export class MarketController {
   @Post()
   create(@Body() createMarketDto: CreateMarketDto) {
     return this.marketService.createMarket(createMarketDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'update categories of market' })
+  @ApiBody({ type: UpdateMarketCategoryDto })
+  @Roles(Role.ADMIN)
+  @Patch(':id/categories')
+  updateCategories(
+    @Param('id') id: string,
+    @Body() updateMarketCategoryDto: UpdateMarketCategoryDto,
+  ) {
+    return this.marketService.updateMarketCategories(
+      id,
+      updateMarketCategoryDto,
+    );
   }
 
   @ApiOperation({ summary: 'get all markets' })

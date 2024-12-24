@@ -48,6 +48,7 @@ import { log, time } from 'console';
 import { writeFileSync } from 'fs';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { getSolPriceInUSD } from 'src/helpers/utils';
+import { UpdateMarketCategoryDto } from './dto/update-market.dto';
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -118,6 +119,16 @@ export class MarketService implements OnApplicationBootstrap {
             (market) => market.marketId === publicKey.toString(),
           );
 
+          if (!market) {
+            this.createMarket({
+              marketPublicKey: publicKey.toString(),
+              marketKey: account.marketKey.toString(16),
+              coverUrl: account.coverUrl,
+              title: account.title.toString(),
+              categoryIds: [],
+            });
+          }
+
           const votersInMarket = voters.filter((voter) => {
             const marketKey = new BN(voter.account.marketKey, 16);
             return marketKey.eq(account.marketKey);
@@ -128,7 +139,7 @@ export class MarketService implements OnApplicationBootstrap {
             ...account,
             view: market ? market.view : 0,
             like: market ? market.like_count : 0,
-            // createdAt: market.createdAt,
+            createdAt: market ? market.createdAt : new Date(),
             totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
             participants: votersInMarket.length,
           };
@@ -141,7 +152,8 @@ export class MarketService implements OnApplicationBootstrap {
           b.participants - a.participants ||
           b.totalVolume - a.totalVolume ||
           b.like - a.like ||
-          b.view - a.view
+          b.view - a.view ||
+          a.createdAt.getTime() - b.createdAt.getTime()
         );
       });
     } catch (error) {
@@ -622,6 +634,38 @@ export class MarketService implements OnApplicationBootstrap {
         );
       }
       throw new InternalServerErrorException('Error in add market to database');
+    }
+  }
+
+  async updateMarketCategories(
+    marketPublicKey: string,
+    updateMarketCategoryDto: UpdateMarketCategoryDto,
+  ) {
+    try {
+      const { categoryIds } = updateMarketCategoryDto;
+      const marketInfo = await this.marketRepository.findOne({
+        where: { marketId: marketPublicKey },
+        relations: ['categories'],
+      });
+      if (!marketInfo)
+        throw new NotFoundException(
+          `Fail to fetch market with id ${marketPublicKey}`,
+        );
+      const newCategories =
+        await this.categoryService.findCategoriesByIds(categoryIds);
+      marketInfo.categories = newCategories;
+      return await this.marketRepository.save(marketInfo);
+    } catch (error) {
+      console.error('Error in update market categories:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in update market categories',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in update market categories',
+      );
     }
   }
 
