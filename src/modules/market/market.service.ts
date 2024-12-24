@@ -90,12 +90,20 @@ export class MarketService implements OnApplicationBootstrap {
           if (isMarketExist) {
             const updatedMarketStats =
               await this.calculateMarketStats(accountKeyBase58);
+            this.updateMarketOptionStatsAndReturnNumberOfOptions(
+              accountKeyBase58,
+              {
+                publicKey: accountKeyBase58,
+                answerStats: updatedMarketStats.answerStats,
+              },
+            );
             await this.redisCacheService.set(
               `${accountKeyBase58}/marketstats`,
               updatedMarketStats,
               { ttl: 60 * 10 } as any,
             );
             console.log('Market stats updated in Redis');
+            break;
           }
         }
       }
@@ -794,71 +802,110 @@ export class MarketService implements OnApplicationBootstrap {
     }
   }
 
+  async updateMarketOptionStatsAndReturnNumberOfOptions(
+    marketPublicKey: string,
+    marketStat: MarketStatsDto = null,
+  ) {
+    try {
+      await this.createPartitionIfNotExist(marketPublicKey);
+      let stats = marketStat;
+      if (!stats) {
+        stats = (await this.marketStats(
+          marketPublicKey,
+          false,
+        )) as MarketStatsDto;
+      }
+      const simplifiedData = stats.answerStats.map((stat) => ({
+        name: stat.name,
+        percentage: stat.percentage,
+      }));
+      let time = new Date();
+      await Promise.all(
+        simplifiedData.map(async (stat) => {
+          const marketOptionStat = this.marketOptionsStatsRepository.create({
+            market: { marketId: marketPublicKey.toString() },
+            name: stat.name,
+            percentage: stat.percentage,
+            timestamp: time,
+          });
+          await this.marketOptionsStatsRepository.save(marketOptionStat);
+        }),
+      );
+      return simplifiedData.length;
+    } catch (error) {
+      console.error('Error in update market options stats:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in update market options stats',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in update market options stats',
+      );
+    }
+  }
+
   async handleMarketOptionStats(
     marketPubKey: PublicKey | string,
     isFirstTimeConnect = false,
   ) {
     try {
-      await this.createPartitionIfNotExist(marketPubKey);
-      const stats = (await this.marketStats(
-        marketPubKey,
-        false,
-      )) as MarketStatsDto;
-      const simplifiedData = stats.answerStats.map((stat) => ({
-        name: stat.name,
-        percentage: stat.percentage,
-      }));
-
       console.log('dang lay data');
-      const lastUpdateTimestamp = await this.redisCacheService.get(
-        `${marketPubKey}/updateStats`,
-      );
-      const lastUpdateDate = new Date(
-        await this.redisCacheService.get(`${marketPubKey}/updateStats`),
-      );
-
-      if (!lastUpdateTimestamp) {
-        var time = new Date();
-        await Promise.all(
-          simplifiedData.map(async (stat) => {
-            const marketOptionStat = this.marketOptionsStatsRepository.create({
-              market: { marketId: marketPubKey.toString() },
-              name: stat.name,
-              percentage: stat.percentage,
-              timestamp: time,
-            });
-            await this.marketOptionsStatsRepository.save(marketOptionStat);
-          }),
-        );
-        this.redisCacheService.set(
-          `${marketPubKey}/updateStats`,
-          time,
-          { ttl: 15 } as any, // 15 seconds TTL
-        );
-      }
-
-      // Get data from database
-      const marketOptionStats = !isFirstTimeConnect
-        ? await this.marketOptionsStatsRepository.find({
+      let marketOptionStats = [];
+      if (isFirstTimeConnect) {
+        const isExistOptionStatsOfMarket =
+          await this.marketOptionsStatsRepository.exists({
+            where: { market: { marketId: marketPubKey.toString() } },
+          });
+        if (!isExistOptionStatsOfMarket) {
+          const numberOfOptions =
+            await this.updateMarketOptionStatsAndReturnNumberOfOptions(
+              marketPubKey.toString(),
+            );
+          this.redisCacheService.set(
+            `${marketPubKey}/updateStats`,
+            numberOfOptions,
+            {
+              ttl: 0,
+            } as any,
+          );
+        }
+        marketOptionStats = await this.marketOptionsStatsRepository.find({
+          where: { market: { marketId: marketPubKey.toString() } },
+          select: ['name', 'percentage', 'timestamp', 'marketId'],
+          order: { timestamp: 'DESC', name: 'DESC' },
+          take: 200,
+        });
+      } else {
+        const marketDataCount = await this.marketOptionsStatsRepository.count({
+          where: { market: { marketId: marketPubKey.toString() } },
+        });
+        const marketDataCountFromRedis: number =
+          await this.redisCacheService.get(`${marketPubKey}/updateStats`);
+        if (marketDataCount > marketDataCountFromRedis) {
+          const latestTimestamp = (
+            await this.marketOptionsStatsRepository.findOne({
+              where: { market: { marketId: marketPubKey.toString() } },
+              order: { timestamp: 'DESC' },
+              select: ['marketId', 'name', 'percentage', 'timestamp'],
+            })
+          ).timestamp;
+          marketOptionStats = await this.marketOptionsStatsRepository.find({
             where: {
-              timestamp: lastUpdateTimestamp
-                ? lastUpdateDate
-                : new Date(
-                    await this.redisCacheService.get(
-                      `${marketPubKey}/updateStats`,
-                    ),
-                  ),
               market: { marketId: marketPubKey.toString() },
+              timestamp: latestTimestamp,
             },
             select: ['name', 'percentage', 'timestamp'],
-            order: { timestamp: 'ASC', name: 'DESC' },
-          })
-        : await this.marketOptionsStatsRepository.find({
-            where: { market: { marketId: marketPubKey.toString() } },
-            select: ['name', 'percentage', 'timestamp', 'marketId'],
             order: { timestamp: 'DESC', name: 'DESC' },
-            take: 200,
           });
+          this.redisCacheService.set(
+            `${marketPubKey}/updateStats`,
+            marketDataCount,
+            { ttl: 0 } as any,
+          );
+        }
+      }
       // Format reponse data
       const groupedStats = marketOptionStats.reduce((acc, stat) => {
         const existingEntry = acc.find(
