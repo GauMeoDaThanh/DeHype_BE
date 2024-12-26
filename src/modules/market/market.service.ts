@@ -200,7 +200,7 @@ export class MarketService implements OnApplicationBootstrap {
         totalVolume:
           marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
         participants: votersInMarket.length,
-        categoriesIds: marketInfo.categories ? marketInfo.categories : [],
+        categories: marketInfo.categories ? marketInfo.categories : [],
       };
     } catch (error) {
       console.log(error);

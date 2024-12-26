@@ -93,6 +93,11 @@ export class MarketDetailDto {
     description: 'URL of the cover image',
   })
   coverUrl: string;
+
+  @ApiProperty({
+    description: 'List of categories that the market belongs to',
+  })
+  categories: string[];
 }
 
 class VoterAccountDto {
