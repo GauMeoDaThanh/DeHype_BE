@@ -157,6 +157,7 @@ export class MarketService implements OnApplicationBootstrap {
       // Return according to trending
       return marketsStats.sort((a, b): number => {
         return (
+          (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0) ||
           b.participants - a.participants ||
           b.totalVolume - a.totalVolume ||
           b.like - a.like ||
@@ -180,6 +181,7 @@ export class MarketService implements OnApplicationBootstrap {
 
       const marketInfo = await this.marketRepository.findOne({
         where: { marketId: marketPublicKey },
+        relations: ['categories'],
       });
 
       const voters = (await this.getAllVoters()) as BettingAccountResponse[];
@@ -198,6 +200,7 @@ export class MarketService implements OnApplicationBootstrap {
         totalVolume:
           marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
         participants: votersInMarket.length,
+        categoriesIds: marketInfo.categories ? marketInfo.categories : [],
       };
     } catch (error) {
       console.log(error);
