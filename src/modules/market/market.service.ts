@@ -178,6 +178,8 @@ export class MarketService implements OnApplicationBootstrap {
         relations: ['categories'],
       });
 
+      return marketInfo
+
       const voters = (await this.getAllVoters()) as BettingAccountResponse[];
 
       const votersInMarket = voters.filter((voter) => {
