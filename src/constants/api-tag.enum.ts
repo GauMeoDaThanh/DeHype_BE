@@ -7,4 +7,5 @@ export enum Tag {
   SEARCH = 'Search',
   CATEGORY = 'Categories',
   STATISTICS = 'Statistics',
+  NOTIFICATIONS = 'Notifications',
 }

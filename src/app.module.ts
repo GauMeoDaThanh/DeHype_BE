@@ -19,6 +19,8 @@ import { FavMarketModule } from './modules/fav-market/fav-market.module';
 import { CategoryModule } from './modules/category/category.module';
 import { SearchModule } from './modules/search/search.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { NotificationsGateway } from './modules/notifications/notifications.gateway';
 
 @Module({
   imports: [
@@ -44,6 +46,7 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
     CategoryModule,
     SearchModule,
     StatisticsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
@@ -52,6 +55,7 @@ import { StatisticsModule } from './modules/statistics/statistics.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    NotificationsGateway,
   ],
 })
 export class AppModule { }

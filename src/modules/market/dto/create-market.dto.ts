@@ -63,8 +63,11 @@ export class CreateBetDto {
 }
 
 export class ResolveMarketDto {
-  marketAddress: string; // Public key of the market as a string
+  @ApiProperty({ description: 'the result of market' })
+  @IsNotEmpty()
   winningOutcome: string; // The winning outcome to resolve the market
+  @ApiProperty({ description: 'the user resolver public key' })
+  @IsNotEmpty()
   userPublicKey: string;
 }
 

@@ -8,6 +8,7 @@ import { CategoryModule } from '../category/category.module';
 import { UserModule } from '../user/user.module';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
     RedisCacheModule,
     CategoryModule,
     CloudinaryModule,
+    NotificationsModule,
     forwardRef(() => UserModule),
   ],
   controllers: [MarketController],

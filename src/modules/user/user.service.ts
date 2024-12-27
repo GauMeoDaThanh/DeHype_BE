@@ -266,4 +266,26 @@ export class UserService {
       );
     }
   }
+
+  async getUserByWalletAddress(walletAddress: string[]) {
+    try {
+      const users = await this.usersRepository.find({
+        where: { walletAddress: In(walletAddress) },
+        select: ['walletAddress'],
+      });
+
+      return users.map((user) => user.walletAddress);
+    } catch (error) {
+      console.error('Error in get user by wallet addess:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in get user by wallet addess',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in get user by wallet addess',
+      );
+    }
+  }
 }

@@ -3,6 +3,7 @@ import { BlockUser } from 'src/modules/block-user/entities/block-user.entity';
 import { Blog } from 'src/modules/blog/entities/blog.entity';
 import { FavMarket } from 'src/modules/fav-market/entities/fav-market.entity';
 import { MarketComment } from 'src/modules/market-comment/entities/market-comment.entity';
+import { Notification } from 'src/modules/notifications/entities/notification.entity';
 import {
   BeforeInsert,
   Column,
@@ -50,4 +51,7 @@ export class User {
 
   @OneToMany(() => FavMarket, (favMarket) => favMarket.user)
   favMarkets: FavMarket[];
+
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notifications: Notification[];
 }

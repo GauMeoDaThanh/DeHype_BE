@@ -26,13 +26,7 @@ import {
   MarketAccount,
   MarketResponse,
 } from './dto/response-market.dto';
-import {
-  connection,
-  program,
-  SOLANA_DECIMALS,
-  hermesConnection,
-} from 'src/constants';
-import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { connection, program, SOLANA_DECIMALS } from 'src/constants';
 import { BN } from '@coral-xyz/anchor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Market } from './entities/market.entity';
@@ -44,11 +38,10 @@ import { interval, Observable, switchMap } from 'rxjs';
 import { MarketStatsDto } from './dto/market-detail.dto';
 import { MarketOptionStats } from './entities/market-option-stats.entity';
 import { response, Response } from 'express';
-import { log, time } from 'console';
-import { writeFileSync } from 'fs';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { getSolPriceInUSD } from 'src/helpers/utils';
 import { UpdateMarketCategoryDto } from './dto/update-market.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -62,6 +55,7 @@ export class MarketService implements OnApplicationBootstrap {
     @Inject(forwardRef(() => UserService))
     private userService: UserService,
     private cloudinaryService: CloudinaryService,
+    private notificationsService: NotificationsService,
   ) {
     // Log the RPC URL and the connection to the cluster
     console.log('Connected to cluster:', connection.rpcEndpoint); // Logs the RPC endpoint
@@ -680,22 +674,39 @@ export class MarketService implements OnApplicationBootstrap {
     }
   }
 
-  async resolveMarket(resolveMarketDto: ResolveMarketDto): Promise<string> {
-    const { marketAddress, winningOutcome, userPublicKey } = resolveMarketDto;
+  async resolveMarket(
+    marketAddress: string,
+    resolveMarketDto: ResolveMarketDto,
+  ) {
+    const { winningOutcome, userPublicKey } = resolveMarketDto;
     try {
-      const transaction = new Transaction().add(
-        await program.methods
-          .resolveMarket(winningOutcome)
-          .accounts({
-            market: new PublicKey(marketAddress),
-            user: new PublicKey(userPublicKey),
-          })
-          .instruction(),
-      );
+      // const transaction = new Transaction().add(
+      //   await program.methods
+      //     .resolveMarket(winningOutcome)
+      //     .accounts({
+      //       market: new PublicKey(marketAddress),
+      //       user: new PublicKey(userPublicKey),
+      //     })
+      //     .instruction(),
+      // );
+      // return transaction
+      //   .serialize({ requireAllSignatures: false })
+      //   .toString('base64');
+      const marketAccount =
+        await program.account.marketAccount.fetch(marketAddress);
+      const voters = (await program.account.bettingAccount.all())
+        .filter((voter) => voter.account.marketKey.eq(marketAccount.marketKey))
+        .map((voter) => voter.account.voter.toString());
+      const uniqueVoters = [...new Set(voters)];
+      // check if voter is in database. If not, remove it from list
+      const users = await this.userService.getUserByWalletAddress(uniqueVoters);
 
-      return transaction
-        .serialize({ requireAllSignatures: false })
-        .toString('base64');
+      this.notificationsService.createEndMarketNotifications(
+        users,
+        marketAccount.title.toString(),
+        winningOutcome,
+      );
+      return 'OK';
     } catch (error) {
       console.error('Error resolving market:', error);
       throw new InternalServerErrorException('Failed to resolve market');

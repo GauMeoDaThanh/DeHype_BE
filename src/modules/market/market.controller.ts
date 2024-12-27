@@ -19,6 +19,7 @@ import {
   CreateMarketTransactionDto,
   CreateMarketDto,
   GetVoterHistoryQueryDto,
+  ResolveMarketDto,
 } from './dto/create-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
@@ -56,6 +57,7 @@ import { Role } from 'src/constants/role.enum';
 import { Roles } from 'src/decorators/role-route';
 import { UploadImageReponseDto } from '../blog/dto/response-blog';
 import { UpdateMarketCategoryDto } from './dto/update-market.dto';
+import { resolve } from 'path';
 
 @ApiTags(Tag.MARKET)
 @Controller('markets')
@@ -245,5 +247,16 @@ export class MarketController {
   @Get('test/:id')
   test(@Param('id') id: string) {
     return this.marketService.handleMarketOptionStats(id);
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'resolve market' })
+  @Post(':id/resolve')
+  @Roles(Role.ADMIN)
+  resolveMarket(
+    @Param('id') marketPublicKey: string,
+    @Body() resolveMarketDto: ResolveMarketDto,
+  ) {
+    return this.marketService.resolveMarket(marketPublicKey, resolveMarketDto);
   }
 }
