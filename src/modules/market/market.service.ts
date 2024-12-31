@@ -139,9 +139,11 @@ export class MarketService implements OnApplicationBootstrap {
             return marketKey.eq(account.marketKey);
           });
 
+          const { startTime: _, ...restAccount } = account;
+
           return {
             publicKey,
-            ...account,
+            ...restAccount,
             createdAt: startTime,
             endTime,
             view: market ? market.view : 0,
@@ -196,9 +198,11 @@ export class MarketService implements OnApplicationBootstrap {
         return marketKey.eq(marketAccount.marketKey);
       });
 
+      const { startTime: _, ...restAccount } = marketAccount;
+
       return {
         publicKey: marketPublicKey,
-        ...marketAccount,
+        ...restAccount,
         view: marketInfo.view,
         like: marketInfo.like_count,
         createdAt: startTime,
@@ -250,9 +254,11 @@ export class MarketService implements OnApplicationBootstrap {
           return marketKey.eq(account.marketKey);
         });
 
+        const { startTime: _, ...restAccount } = account;
+
         return {
           publicKey,
-          ...account,
+          ...restAccount,
           createAt: startTime,
           endTime,
           view: market.view,
