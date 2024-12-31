@@ -83,8 +83,7 @@ export class StatisticsController {
   }
 
   @ApiOperation({ summary: 'Get general statistics' })
-  @ApiBearerAuth()
-  @Roles(Role.ADMIN)
+  @Public()
   @ApiInternalServerErrorResponse()
   @ApiOkResponse({ type: [GeneralStatisticReponse] })
   @Get()
