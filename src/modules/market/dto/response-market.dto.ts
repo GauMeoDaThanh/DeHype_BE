@@ -17,6 +17,8 @@ export type MarketAccount = {
   coverUrl: string; // string
   startTime: BN; // u64 (BN for large numbers)
   endTime: BN; // u64 (BN for large numbers)
+  totalRewards: BN;
+  totalWinner: BN;
 };
 
 export type MarketResponse = {

@@ -251,6 +251,12 @@ export class GetAllMarketReponse {
 
   @ApiProperty({ example: 3 })
   numVoters: number;
+
+  @ApiProperty({ example: 0 })
+  totalRewards: number;
+
+  @ApiProperty({ example: 0 })
+  totalWinner: number;
 }
 
 export class SimpleMarketResponse {
