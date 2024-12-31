@@ -94,6 +94,10 @@
         {
           "name": "serviceFeePercentage",
           "type": "u64"
+        },
+        {
+          "name": "endTime",
+          "type": "u64"
         }
       ]
     },
@@ -321,6 +325,14 @@
           {
             "name": "coverUrl",
             "type": "string"
+          },
+          {
+            "name": "endTime",
+            "type": "u64"
+          },
+          {
+            "name": "startTime",
+            "type": "u64"
           }
         ]
       }
@@ -354,6 +366,133 @@
           }
         ]
       }
+    }
+  ],
+  "events": [
+    {
+      "name": "BetEvent",
+      "fields": [
+        {
+          "name": "voter",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "marketKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "answerKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "amount",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marketPublicKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "bettingAccountKey",
+          "type": "publicKey",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "CreateMarketEvent",
+      "fields": [
+        {
+          "name": "creator",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "marketKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "coverUrl",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "creatorFeePercentage",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "timestamp",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "CreateMarketEvent",
+      "fields": [
+        {
+          "name": "creator",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "marketKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "coverUrl",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "creatorFeePercentage",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "startTime",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "endTime",
+          "type": "u64",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
@@ -434,6 +573,6 @@
     }
   ],
   "metadata": {
-    "address": "7fKSTrQLMk4K8svWTZ6dpD7mFVVfQdZ2TUb9MfqfAUWK"
+    "address": "7eLNPdKRdBRg1y8Te6g2zf2WfQV3pcrkmFMmwUje6Eoh"
   }
 }
