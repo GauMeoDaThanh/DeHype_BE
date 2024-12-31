@@ -31,7 +31,7 @@ anchor.setProvider(provider);
 export const program = new Program(
   idl as Idl,
   // new PublicKey('7fKSTrQLMk4K8svWTZ6dpD7mFVVfQdZ2TUb9MfqfAUWK'),
-  new PublicKey('7eLNPdKRdBRg1y8Te6g2zf2WfQV3pcrkmFMmwUje6Eoh'),
+  new PublicKey('9FXu3CrZNKgJPnJNkR9K2R5TK6vF1bwHrxcZwGprG5gT'),
   provider,
 );
 

@@ -16,6 +16,11 @@
           "isSigner": false
         },
         {
+          "name": "serviceFeeAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -190,6 +195,107 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "resolveMarket",
+      "accounts": [
+        {
+          "name": "owner",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "config",
+          "isMut": false,
+          "isSigner": false,
+          "relations": ["owner", "service_fee_account"]
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "answerAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serviceFeeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "creatorFeeAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "marketKey",
+          "type": "u64"
+        },
+        {
+          "name": "correctAnswerKey",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "claimReward",
+      "accounts": [
+        {
+          "name": "voter",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "marketAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "betAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "answerAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "marketKey",
+          "type": "u64"
+        },
+        {
+          "name": "answerKey",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -316,7 +422,9 @@
           },
           {
             "name": "correctAnswerKey",
-            "type": "u64"
+            "type": {
+              "option": "u64"
+            }
           },
           {
             "name": "isActive",
@@ -332,6 +440,14 @@
           },
           {
             "name": "startTime",
+            "type": "u64"
+          },
+          {
+            "name": "totalRewards",
+            "type": "u64"
+          },
+          {
+            "name": "totalWinner",
             "type": "u64"
           }
         ]
@@ -363,6 +479,10 @@
           {
             "name": "outcomeTokenLogo",
             "type": "string"
+          },
+          {
+            "name": "totalVotes",
+            "type": "u64"
           }
         ]
       }
@@ -570,9 +690,29 @@
       "code": 6014,
       "name": "InvalidArguments",
       "msg": "Invalid arguments"
+    },
+    {
+      "code": 6015,
+      "name": "MarketResolved",
+      "msg": "Market is already resolved"
+    },
+    {
+      "code": 6016,
+      "name": "MarketNotResolved",
+      "msg": "Market is not resolved"
+    },
+    {
+      "code": 6017,
+      "name": "NotWinner",
+      "msg": "You are not the winner"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidPercent",
+      "msg": "Invalid percent"
     }
   ],
   "metadata": {
-    "address": "7eLNPdKRdBRg1y8Te6g2zf2WfQV3pcrkmFMmwUje6Eoh"
+    "address": "9FXu3CrZNKgJPnJNkR9K2R5TK6vF1bwHrxcZwGprG5gT"
   }
 }
