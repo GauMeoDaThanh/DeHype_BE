@@ -94,6 +94,12 @@ export class MarketDetailDto {
   })
   coverUrl: string;
 
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  createdAt: string;
+
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  endTime: string;
+
   @ApiProperty({
     description: 'List of categories that the market belongs to',
   })
@@ -237,6 +243,9 @@ export class GetAllMarketReponse {
   @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
   createdAt: string;
 
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  endTIme: string;
+
   @ApiProperty({ example: 0 })
   totalVolume: number;
 
@@ -264,4 +273,7 @@ export class SimpleMarketResponse {
 
   @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
   createdAt: string;
+
+  @ApiProperty({ example: '2024-11-05T00:13:17.353Z' })
+  endTime: string;
 }

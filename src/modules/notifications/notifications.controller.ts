@@ -32,9 +32,9 @@ export class NotificationsController {
   @Post()
   create() {
     return this.notificationsService.createEndMarketNotifications(
-      ['12341'],
+      ['2a6uU2UfXtNd5NS9Vyzr8WmzS9HHEjfuVeFiBfoBTDRp'],
       '1415151',
-      'yes',
+      'no',
     );
   }
 

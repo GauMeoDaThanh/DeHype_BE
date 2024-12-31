@@ -28,9 +28,6 @@ export class Market {
   @Column({ default: 0 })
   like_count: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
-
   @ManyToMany(() => Category, (category) => category.markets)
   @JoinTable({
     name: 'market_category',

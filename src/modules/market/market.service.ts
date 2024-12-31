@@ -121,6 +121,9 @@ export class MarketService implements OnApplicationBootstrap {
             (market) => market.marketId === publicKey.toString(),
           );
 
+          const startTime = new Date(account.startTime.toNumber() * 1000);
+          const endTime = new Date(account.endTime.toNumber() * 1000);
+
           if (!market) {
             this.createMarket({
               marketPublicKey: publicKey.toString(),
@@ -139,9 +142,10 @@ export class MarketService implements OnApplicationBootstrap {
           return {
             publicKey,
             ...account,
+            createdAt: startTime,
+            endTime,
             view: market ? market.view : 0,
             like: market ? market.like_count : 0,
-            createdAt: market ? market.createdAt : new Date(),
             totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
             participants: votersInMarket.length,
           };
@@ -156,7 +160,7 @@ export class MarketService implements OnApplicationBootstrap {
           b.totalVolume - a.totalVolume ||
           b.like - a.like ||
           b.view - a.view ||
-          a.createdAt.getTime() - b.createdAt.getTime()
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
         );
       });
     } catch (error) {
@@ -178,6 +182,8 @@ export class MarketService implements OnApplicationBootstrap {
         relations: ['categories'],
       });
 
+      const startTime = new Date(marketAccount.startTime.toNumber() * 1000);
+      const endTime = new Date(marketAccount.endTime.toNumber() * 1000);
       const voters = (await this.getAllVoters()) as BettingAccountResponse[];
 
       const votersInMarket = voters.filter((voter) => {
@@ -190,7 +196,8 @@ export class MarketService implements OnApplicationBootstrap {
         ...marketAccount,
         view: marketInfo.view,
         like: marketInfo.like_count,
-        createdAt: marketInfo.createdAt,
+        createdAt: startTime,
+        endTime,
         totalVolume:
           marketAccount.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
         participants: votersInMarket.length,
@@ -230,6 +237,9 @@ export class MarketService implements OnApplicationBootstrap {
           (market) => market.marketId === publicKey.toString(),
         );
 
+        const startTime = new Date(account.startTime.toNumber() * 1000);
+        const endTime = new Date(account.endTime.toNumber() * 1000);
+
         const votersInMarket = voters.filter((voter) => {
           const marketKey = new BN(voter.account.marketKey, 16);
           return marketKey.eq(account.marketKey);
@@ -238,9 +248,10 @@ export class MarketService implements OnApplicationBootstrap {
         return {
           publicKey,
           ...account,
+          createAt: startTime,
+          endTime,
           view: market.view,
           like: market.like_count,
-          createdAt: market.createdAt,
           totalVolume: account.marketTotalTokens.toNumber() / SOLANA_DECIMALS,
           participants: votersInMarket.length,
         };

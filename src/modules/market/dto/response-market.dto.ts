@@ -15,6 +15,8 @@ export type MarketAccount = {
   correctAnswerKey: BN; // u64 (BN for large numbers)
   isActive: boolean; // bool
   coverUrl: string; // string
+  startTime: BN; // u64 (BN for large numbers)
+  endTime: BN; // u64 (BN for large numbers)
 };
 
 export type MarketResponse = {
@@ -98,4 +100,3 @@ export class MarketLiveUpdateResponseDto {
   })
   stats: MarketOptionStatDto[];
 }
-
