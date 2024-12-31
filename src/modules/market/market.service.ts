@@ -164,10 +164,15 @@ export class MarketService implements OnApplicationBootstrap {
         );
       });
     } catch (error) {
-      console.error('Error fetching all markets:', error);
+      console.error('Error in get all markets:', error);
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in get all markets',
+          error.message,
+        );
+      }
       throw new InternalServerErrorException(
-        'Failed to fetch all market: ',
-        error,
+        'Unexpected error in get all markets',
       );
     }
   }
