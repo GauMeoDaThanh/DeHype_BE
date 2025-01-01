@@ -46,6 +46,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('dehype')
     .build();
+    
   const document = SwaggerModule.createDocument(app, config);
 
   document.tags = [
