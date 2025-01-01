@@ -1087,7 +1087,7 @@ export class MarketService implements OnApplicationBootstrap {
       'X-API-Key': process.env.YOU_AI_SEARCH_API,
     };
 
-    const results: any[] = [];
+    let results: any[] = [];
     for (const query of result) {
       const url = `https://api.ydc-index.io/search?query=${query}`;
       const response = await axios.get(url, {
@@ -1097,11 +1097,13 @@ export class MarketService implements OnApplicationBootstrap {
       break;
     }
 
-    results.map((result) => result.hits.map((hit: any) => hit.snippets));
+    results = results.map((result) =>
+      result.hits.map((hit: any) => hit.snippets),
+    );
 
     //synthesizing content
     const contentSlice = 750;
-    const inputData = result
+    const inputData = results
       .map((result) => result.slice(0, contentSlice))
       .join(',');
     const generationConfig = {
