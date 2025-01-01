@@ -81,22 +81,6 @@
           }
         },
         {
-          "name": "outcomeTokenNames",
-          "type": {
-            "option": {
-              "vec": "string"
-            }
-          }
-        },
-        {
-          "name": "outcomeTokenLogos",
-          "type": {
-            "option": {
-              "vec": "string"
-            }
-          }
-        },
-        {
           "name": "serviceFeePercentage",
           "type": "u64"
         },
@@ -471,14 +455,6 @@
           {
             "name": "answerTotalTokens",
             "type": "u64"
-          },
-          {
-            "name": "outcomeTokenName",
-            "type": "string"
-          },
-          {
-            "name": "outcomeTokenLogo",
-            "type": "string"
           },
           {
             "name": "totalVotes",

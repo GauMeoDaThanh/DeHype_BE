@@ -27,7 +27,7 @@ import {
   MarketResponse,
 } from './dto/response-market.dto';
 import { connection, program, SOLANA_DECIMALS } from 'src/constants';
-import { BN } from '@coral-xyz/anchor';
+import { BN, Coder, EventParser } from '@coral-xyz/anchor';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Market } from './entities/market.entity';
 import { ILike, In, Like, Repository } from 'typeorm';
@@ -42,6 +42,28 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { getSolPriceInUSD } from 'src/helpers/utils';
 import { UpdateMarketCategoryDto } from './dto/update-market.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { BorshCoder } from '@project-serum/anchor';
+
+interface BetEventData {
+  voter: PublicKey;
+  marketKey: BN;
+  answerKey: BN;
+  amount: BN;
+  marketPublicKey: PublicKey;
+  timestamp: BN;
+  bettingAccountKey: PublicKey;
+}
+
+interface CreateEventData {
+  voter: PublicKey;
+  marketKey: BN;
+  title: string;
+  coverUrl: string;
+  description: string;
+  createorFeePercentage: BN;
+  startTime: BN;
+  endTime: BN;
+}
 
 @Injectable()
 export class MarketService implements OnApplicationBootstrap {
@@ -74,34 +96,48 @@ export class MarketService implements OnApplicationBootstrap {
           commitment: 'confirmed',
         },
       );
-      if (transaction) {
-        for (const accountKey of transaction.transaction.message.accountKeys) {
-          const accountKeyBase58 = accountKey.pubkey.toBase58();
-          const isMarketExist = await this.marketRepository.existsBy({
-            marketId: accountKeyBase58,
-          });
 
-          if (isMarketExist) {
-            const updatedMarketStats =
-              await this.calculateMarketStats(accountKeyBase58);
-            this.updateMarketOptionStatsAndReturnNumberOfOptions(
-              accountKeyBase58,
-              {
-                publicKey: accountKeyBase58,
-                answerStats: updatedMarketStats.answerStats,
-              },
-            );
-            await this.redisCacheService.set(
-              `${accountKeyBase58}/marketstats`,
-              updatedMarketStats,
-              { ttl: 60 * 10 } as any,
-            );
-            console.log('Market stats updated in Redis');
-            break;
-          }
+      const eventParser = new EventParser(
+        program.programId,
+        new BorshCoder(program.idl) as unknown as Coder<string, string>,
+      );
+      const events = eventParser.parseLogs(transaction.meta.logMessages);
+      for (let event of events) {
+        console.log(event);
+        if (event.name === 'BetEvent') {
+          this.handleBettingEvent(event.data);
+        } else if (event.name === 'CreateMarketEvent') {
+          this.handleCreateMarketEvent(event.data);
         }
       }
     });
+  }
+
+  private async handleCreateMarketEvent(eventData: any) {
+    console.log('Create market event data:', eventData);
+    // this.createMarket({
+    //   marketPublicKey: eventData.public.toString(),
+    //   marketKey: eventData.marketKey.toString(16),
+    //   coverUrl: eventData.coverUrl,
+    //   title: eventData.title.toString(),
+    //   categoryIds: [],
+    // });
+  }
+
+  private async handleBettingEvent(eventData: BetEventData) {
+    const marketPublicKey = eventData.marketPublicKey.toString();
+    console.log(marketPublicKey);
+    const updatedMarketStats = await this.calculateMarketStats(marketPublicKey);
+    this.updateMarketOptionStatsAndReturnNumberOfOptions(marketPublicKey, {
+      publicKey: marketPublicKey,
+      answerStats: updatedMarketStats.answerStats,
+    });
+    await this.redisCacheService.set(
+      `${marketPublicKey}/marketstats`,
+      updatedMarketStats,
+      { ttl: 60 * 10 } as any,
+    );
+    console.log('Market stats updated in Redis');
   }
 
   async getMarkets() {
@@ -123,16 +159,6 @@ export class MarketService implements OnApplicationBootstrap {
 
           const startTime = new Date(account.startTime.toNumber() * 1000);
           const endTime = new Date(account.endTime.toNumber() * 1000);
-
-          if (!market) {
-            this.createMarket({
-              marketPublicKey: publicKey.toString(),
-              marketKey: account.marketKey.toString(16),
-              coverUrl: account.coverUrl,
-              title: account.title.toString(),
-              categoryIds: [],
-            });
-          }
 
           const votersInMarket = voters.filter((voter) => {
             const marketKey = new BN(voter.account.marketKey, 16);
@@ -421,7 +447,6 @@ export class MarketService implements OnApplicationBootstrap {
         `${marketPublicKey}/marketstats`,
       );
       if (marketStats && isCache) return marketStats;
-
       marketStats = await this.calculateMarketStats(marketPublicKey);
 
       this.redisCacheService.set(
