@@ -21,6 +21,7 @@ import {
   GetVoterHistoryQueryDto,
   ResolveMarketDto,
   GetMarketSummaryDto,
+  GetVoterRewardDto,
 } from './dto/create-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
@@ -51,6 +52,7 @@ import {
 import {
   MarketLiveUpdateResponseDto,
   MarketOptionStatDto,
+  VoterReward,
 } from './dto/response-market.dto';
 import { FileValidationPipe } from 'src/pipe/file-validation.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -268,5 +270,13 @@ export class MarketController {
   @Post('/summary')
   getMarketSummary(@Body() getMarketSummary: GetMarketSummaryDto) {
     return this.marketService.marketSummary(getMarketSummary);
+  }
+
+  @ApiOperation({ summary: 'get voter reward' })
+  @ApiBearerAuth()
+  @ApiOkResponse({type: VoterReward})
+  @Post('reward')
+  getVoterReward(@Body() getVoterRewardDto: GetVoterRewardDto) {
+    return this.marketService.getVoterReward(getVoterRewardDto);
   }
 }

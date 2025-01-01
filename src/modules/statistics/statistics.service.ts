@@ -110,6 +110,7 @@ export class StatisticsService {
   }
 
   async getMostProfitLeaderboard() {
+    
     return 'This action returns the most profit leaderboard';
   }
 

@@ -20,6 +20,7 @@ import {
   GetVoterHistoryQueryDto,
   ResolveMarketDto,
   GetMarketSummaryDto,
+  GetVoterRewardDto,
 } from './dto/create-market.dto';
 import {
   AnswerAccount,
@@ -58,15 +59,11 @@ interface BetEventData {
   bettingAccountKey: PublicKey;
 }
 
-interface CreateEventData {
+export interface WinnerInfo {
   voter: PublicKey;
-  marketKey: BN;
-  title: string;
-  coverUrl: string;
-  description: string;
-  createorFeePercentage: BN;
-  startTime: BN;
-  endTime: BN;
+  reward: BN;
+  betAmount: BN;
+  voterPercent: number;
 }
 
 @Injectable()
@@ -413,6 +410,31 @@ export class MarketService implements OnApplicationBootstrap {
       console.error('Error in batch market stats:', error);
       throw new InternalServerErrorException(
         'Failed to fetch batch market stats',
+      );
+    }
+  }
+
+  async getBatchMarketPubKeyBaseOnMarketKeys(marketKeys: string[]) {
+    try {
+      const markets = await this.marketRepository.find({
+        where: { marketKey: In(marketKeys) },
+        select: ['marketId'],
+      });
+
+      return markets;
+    } catch (error) {
+      console.error(
+        'Error in get batch market pub key base on market key:',
+        error,
+      );
+      if (error instanceof Error) {
+        throw new InternalServerErrorException(
+          'Error in get batch market base on market key',
+          error.message,
+        );
+      }
+      throw new InternalServerErrorException(
+        'Unexpected error in get batch market base on market key',
       );
     }
   }
@@ -1220,5 +1242,139 @@ export class MarketService implements OnApplicationBootstrap {
         'Error in get user betting history',
       );
     }
+  }
+
+  async getMarketWinners(marketPubKey: string) {
+    const marketAccount =
+      await program.account.marketAccount.fetch(marketPubKey);
+    const [answerPDA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('answer'),
+        marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+      ],
+      program.programId,
+    );
+    const answerAccount = (await program.account.answerAccount.fetch(
+      answerPDA,
+    )) as unknown as AnswerAccount;
+
+    // Check if market has been resolved
+    if (!marketAccount.correctAnswerKey) {
+      throw new Error('Market has not been resolved yet');
+    }
+    // console.log(answer.answerKey.eq(marketAccount.correctAnswerKey));
+    const correctAnswer = answerAccount.answers.find((answer) =>
+      answer.answerKey.eq(marketAccount.correctAnswerKey),
+    );
+    console.log('correctAnswer', correctAnswer);
+    if (!correctAnswer) {
+      throw new Error('Correct answer not found');
+    }
+
+    // Get all betting accounts for this market
+    const bettingAccounts = await program.account.bettingAccount.all([
+      {
+        memcmp: {
+          offset: 8, // Skip discriminator
+          bytes: marketAccount.marketKey.toBuffer('le', 8).toString('base64'),
+        },
+      },
+    ]);
+    console.log('come here');
+    const winners: WinnerInfo[] = [];
+    const totalTokensWinnersBet = correctAnswer.answerTotalTokens;
+
+    // Filter and process winning bets
+    for (const account of bettingAccounts) {
+      const betData = account.account;
+
+      // Check if this bet was for the winning answer
+      if (
+        betData.answerKey.toNumber() ===
+        marketAccount.correctAnswerKey.toNumber()
+      ) {
+        const voterPercent = betData.tokens
+          .mul(new BN(1e9)) // LAMPORTS_PER_SOL
+          .mul(new BN(10_000))
+          .div(new BN(totalTokensWinnersBet))
+          .div(new BN(1e9))
+          .toNumber();
+
+        if (voterPercent > 0 && voterPercent <= 10_000) {
+          const reward = marketAccount.totalRewards
+            .mul(new BN(voterPercent))
+            .div(new BN(10_000));
+
+          winners.push({
+            voter: account.account.voter,
+            reward,
+            betAmount: new BN(betData.tokens),
+            voterPercent: voterPercent / 100, // Convert to percentage
+          });
+        }
+      }
+    }
+
+    // Sort by reward amount (highest first)
+    return winners.sort((a, b) => {
+      return b.reward.sub(a.reward).toNumber();
+    });
+  }
+
+  public async getVoterReward(getVoterRewardDto: GetVoterRewardDto) {
+    const { marketPublicKey, walletAddress } = getVoterRewardDto;
+    const voters = await program.account.bettingAccount.all();
+
+    const marketAccount =
+      await program.account.marketAccount.fetch(marketPublicKey);
+    const [answerPDA] = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from('answer'),
+        marketAccount.marketKey.toArrayLike(Buffer, 'le', 8),
+      ],
+      program.programId,
+    );
+    const answerAccount = (await program.account.answerAccount.fetch(
+      answerPDA,
+    )) as unknown as AnswerAccount;
+    const currentVoter = voters.filter(
+      (voter) =>
+        voter.account.voter.toString() === walletAddress &&
+        voter.account.marketKey.eq(marketAccount.marketKey),
+    );
+    if (currentVoter.length === 0) {
+      return null;
+    }
+
+    const correctAnswer = answerAccount.answers.find((answer) =>
+      answer.answerKey.eq(marketAccount.correctAnswerKey),
+    );
+
+    if (!correctAnswer) {
+      throw new Error('Correct answer not found');
+    }
+
+    // Calculate voter's percentage of winning pool
+    const totalTokensWinnersBet = correctAnswer.answerTotalTokens;
+    const voterPercent = currentVoter[0].account.tokens
+      .mul(new BN(1e9)) // LAMPORTS_PER_SOL
+      .mul(new BN(10_000))
+      .div(new BN(totalTokensWinnersBet))
+      .div(new BN(1e9));
+
+    if (voterPercent.lten(0) || voterPercent.gt(new BN(10_000))) {
+      throw new Error('Invalid reward percentage');
+    }
+
+    // Calculate voter's reward
+    const reward =
+      marketAccount.totalRewards.mul(voterPercent).div(new BN(10_000)) /
+      SOLANA_DECIMALS;
+
+    return {
+      reward,
+      betAmount:
+        new BN(currentVoter[0].account.tokens).toNumber() / SOLANA_DECIMALS,
+    };
   }
 }

@@ -26,7 +26,7 @@ export class NotificationsService {
     marketTitle: string,
     result: string,
   ) {
-    const content = `Market ${marketTitle} has been ended with the final result is ${result.toUpperCase()}`;
+    const content = `Market ${marketTitle} has been ended with the final result is ${result.toUpperCase()}. Please checkout market details to claim your rewards if you are the winner.`;
     const notificationType = await this.notificationTypeRepository.findOne({
       where: { type: 'end_market' },
     });

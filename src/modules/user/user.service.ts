@@ -208,6 +208,27 @@ export class UserService {
     return response;
   }
 
+  async calculateUserProfitLoss(walletAddress: string, marketKeys: any[]) {
+    console.log(marketKeys);
+    const marketPubKeys = (
+      await this.marketService.getBatchMarketPubKeyBaseOnMarketKeys(marketKeys)
+    ).map((market) => market.marketId);
+    console.log(marketPubKeys);
+    const marketInfo = await this.marketService.getBatchMarkets(
+      marketPubKeys,
+      false,
+    );
+    const marketInfoPubKeys = marketInfo.map((market) => market.publicKey);
+    // for (const publicKey of marketInfoPubKeys) {
+
+    // }
+    const profitLoss = await this.marketService.getMarketWinners(
+      '6KeDU6w3xK1K1WLraa3eEf7adgGTCgyALjuA2V1dSEx',
+    );
+
+    return profitLoss;
+  }
+
   async findOne(walletAddress: string) {
     const bettingAccounts = await getBettingAccounts();
     const bettingAccountsOfUser = bettingAccounts.filter(
@@ -218,12 +239,18 @@ export class UserService {
       bettingAccountsOfUser.map((account) => account.marketKey.toString(16)),
     ).size;
 
+    const marketKeys = new Set(
+      bettingAccountsOfUser.map((account) => account.marketKey.toString(16)),
+    );
     const totalAmount = bettingAccountsOfUser.reduce(
       (sum, account) => sum + account.tokens,
       0,
     );
 
-    const profitLoss = 0;
+    const profitLoss = this.calculateUserProfitLoss(
+      walletAddress,
+      Array.from(marketKeys),
+    );
 
     const user = await this.getUser(walletAddress);
 

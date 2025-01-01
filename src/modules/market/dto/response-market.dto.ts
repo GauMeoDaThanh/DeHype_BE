@@ -83,6 +83,13 @@ export class MarketOptionStatDto {
   data: MarketOptionStatDataDto[];
 }
 
+export class VoterReward {
+  @ApiProperty({ description: 'number of tokens rewarded to the voter' })
+  reward: number;
+  @ApiProperty({ description: 'bet amount of the voter' })
+  betAmount: number;
+}
+
 export class MarketLiveUpdateResponseDto {
   @ApiProperty({
     description: 'The public key of the market.',

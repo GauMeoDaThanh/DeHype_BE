@@ -95,3 +95,13 @@ export class GetVoterHistoryQueryDto {
   @IsNumber()
   min: number;
 }
+
+export class GetVoterRewardDto{
+  @ApiProperty({ description: 'The public key of the user' })
+  @IsNotEmpty()
+  walletAddress: string;
+
+  @ApiProperty({ description: 'The market public key' })
+  @IsNotEmpty()
+  marketPublicKey: string;
+}
