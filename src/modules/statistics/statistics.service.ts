@@ -12,12 +12,14 @@ import { In, Repository } from 'typeorm';
 import { User } from '../user/entities/user.entity';
 import { QueryStatisticDto } from './dto/query-statistic.dto';
 import { reduce } from 'rxjs';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class StatisticsService {
   constructor(
     private redisCacheService: CacheService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly userService: UserService,
   ) {}
 
   private async getSOLPrice() {
@@ -110,8 +112,32 @@ export class StatisticsService {
   }
 
   async getMostProfitLeaderboard() {
-    
-    return 'This action returns the most profit leaderboard';
+    const bettingAccounts = await getBettingAccounts();
+    const differentAccount = Array.from(
+      new Set(
+        bettingAccounts.map((account) => account.voter.toString()) as string[],
+      ),
+    );
+
+    const result = await Promise.all(
+      differentAccount.map(async (key) => {
+        const user = (await this.userService.findOne(key)) as any;
+        if (user) {
+          return {
+            username: user.username,
+            avatarUrl: user.avatarUrl,
+            walletAddress: user.walletAddress,
+            profit: user.profitLoss,
+          };
+        } else {
+          return null;
+        }
+      }),
+    );
+
+    return result
+      .filter((user) => user?.profit > 0)
+      .sort((a, b) => b?.profit - a?.profit);
   }
 
   async getMemberStatistics(query: QueryStatisticDto) {
