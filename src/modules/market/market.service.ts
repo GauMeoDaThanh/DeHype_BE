@@ -1244,9 +1244,14 @@ export class MarketService implements OnApplicationBootstrap {
     }
   }
 
-  async getMarketWinners(marketPubKey: string) {
+  async getMarketProfit(
+    walletAddress: string,
+    marketPublicKey: string | PublicKey,
+  ) {
+    const voters = (await this.redisCacheService.get('all_voters')) as any[];
+
     const marketAccount =
-      await program.account.marketAccount.fetch(marketPubKey);
+      await program.account.marketAccount.fetch(marketPublicKey);
     const [answerPDA] = PublicKey.findProgramAddressSync(
       [
         Buffer.from('answer'),
@@ -1257,68 +1262,66 @@ export class MarketService implements OnApplicationBootstrap {
     const answerAccount = (await program.account.answerAccount.fetch(
       answerPDA,
     )) as unknown as AnswerAccount;
-
-    // Check if market has been resolved
-    if (!marketAccount.correctAnswerKey) {
-      throw new Error('Market has not been resolved yet');
-    }
-    // console.log(answer.answerKey.eq(marketAccount.correctAnswerKey));
     const correctAnswer = answerAccount.answers.find((answer) =>
       answer.answerKey.eq(marketAccount.correctAnswerKey),
     );
-    console.log('correctAnswer', correctAnswer);
-    if (!correctAnswer) {
-      throw new Error('Correct answer not found');
-    }
-
-    // Get all betting accounts for this market
-    const bettingAccounts = await program.account.bettingAccount.all([
-      {
-        memcmp: {
-          offset: 8, // Skip discriminator
-          bytes: marketAccount.marketKey.toBuffer('le', 8).toString('base64'),
-        },
-      },
-    ]);
-    console.log('come here');
-    const winners: WinnerInfo[] = [];
+    const incorrectAnswer = answerAccount.answers.find(
+      (answer) => !answer.answerKey.eq(marketAccount.correctAnswerKey),
+    );
+    const currentVoterWithCorrectAnswer = voters.filter(
+      (voter) =>
+        voter.account.voter.toString() === walletAddress.toString() &&
+        new BN(voter.account.marketKey, 16).eq(marketAccount.marketKey) &&
+        new BN(voter.account.answerKey, 16).eq(correctAnswer.answerKey),
+    );
+    const currentVoterWithIncorrectAnswer = voters.filter(
+      (voter) =>
+        voter.account.voter.toString() === walletAddress.toString() &&
+        new BN(voter.account.marketKey, 16).eq(marketAccount.marketKey) &&
+        new BN(voter.account.answerKey, 16).eq(incorrectAnswer.answerKey),
+    );
+    // Calculate voter's percentage of winning pool
+    let profit = 0;
+    let loss = 0;
     const totalTokensWinnersBet = correctAnswer.answerTotalTokens;
+    if (currentVoterWithCorrectAnswer.length > 0) {
+      const voterPercent = new BN(
+        currentVoterWithCorrectAnswer[0].account.tokens,
+        16,
+      )
+        .mul(new BN(1e9)) // LAMPORTS_PER_SOL
+        .mul(new BN(10_000))
+        .div(new BN(totalTokensWinnersBet))
+        .div(new BN(1e9));
 
-    // Filter and process winning bets
-    for (const account of bettingAccounts) {
-      const betData = account.account;
-
-      // Check if this bet was for the winning answer
-      if (
-        betData.answerKey.toNumber() ===
-        marketAccount.correctAnswerKey.toNumber()
-      ) {
-        const voterPercent = betData.tokens
-          .mul(new BN(1e9)) // LAMPORTS_PER_SOL
-          .mul(new BN(10_000))
-          .div(new BN(totalTokensWinnersBet))
-          .div(new BN(1e9))
-          .toNumber();
-
-        if (voterPercent > 0 && voterPercent <= 10_000) {
-          const reward = marketAccount.totalRewards
-            .mul(new BN(voterPercent))
-            .div(new BN(10_000));
-
-          winners.push({
-            voter: account.account.voter,
-            reward,
-            betAmount: new BN(betData.tokens),
-            voterPercent: voterPercent / 100, // Convert to percentage
-          });
-        }
-      }
+      // Calculate voter's reward
+      profit =
+        marketAccount.totalRewards.mul(voterPercent).div(new BN(10_000)) /
+        SOLANA_DECIMALS;
+    } else if (currentVoterWithIncorrectAnswer.length > 0) {
+      loss = -(
+        new BN(
+          currentVoterWithIncorrectAnswer[0].account.tokens,
+          16,
+        ).toNumber() / SOLANA_DECIMALS
+      );
     }
+    return profit + loss;
+  }
 
-    // Sort by reward amount (highest first)
-    return winners.sort((a, b) => {
-      return b.reward.sub(a.reward).toNumber();
-    });
+  async getMarketsProfit(
+    walletAddress: string,
+    marketEndPubKeys: (string | PublicKey)[],
+  ) {
+    const voters = await program.account.bettingAccount.all();
+    this.redisCacheService.set('all_voters', voters, { ttl: 0 } as any);
+
+    let profit = 0;
+    for (const marketEndPubKey of marketEndPubKeys) {
+      profit += await this.getMarketProfit(walletAddress, marketEndPubKey);
+    }
+    this.redisCacheService.del('all_voters');
+    return profit;
   }
 
   public async getVoterReward(getVoterRewardDto: GetVoterRewardDto) {
@@ -1337,14 +1340,6 @@ export class MarketService implements OnApplicationBootstrap {
     const answerAccount = (await program.account.answerAccount.fetch(
       answerPDA,
     )) as unknown as AnswerAccount;
-    const currentVoter = voters.filter(
-      (voter) =>
-        voter.account.voter.toString() === walletAddress &&
-        voter.account.marketKey.eq(marketAccount.marketKey),
-    );
-    if (currentVoter.length === 0) {
-      return null;
-    }
 
     const correctAnswer = answerAccount.answers.find((answer) =>
       answer.answerKey.eq(marketAccount.correctAnswerKey),
@@ -1352,6 +1347,16 @@ export class MarketService implements OnApplicationBootstrap {
 
     if (!correctAnswer) {
       throw new Error('Correct answer not found');
+    }
+
+    const currentVoter = voters.filter(
+      (voter) =>
+        voter.account.voter.toString() === walletAddress &&
+        voter.account.marketKey.eq(marketAccount.marketKey) &&
+        voter.account.answerKey.eq(correctAnswer.answerKey),
+    );
+    if (currentVoter.length === 0) {
+      return null;
     }
 
     // Calculate voter's percentage of winning pool
