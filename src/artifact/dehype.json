@@ -554,6 +554,46 @@
           "index": false
         }
       ]
+    },
+    {
+      "name": "MarketResolvedEvent",
+      "fields": [
+        {
+          "name": "marketKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marketPubkey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "correctAnswerKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "totalRewards",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "totalWinners",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marketTitle",
+          "type": "string",
+          "index": false
+        },
+        {
+          "name": "answerName",
+          "type": "string",
+          "index": false
+        }
+      ]
     }
   ],
   "errors": [
@@ -659,6 +699,6 @@
     }
   ],
   "metadata": {
-    "address": "9FXu3CrZNKgJPnJNkR9K2R5TK6vF1bwHrxcZwGprG5gT"
+    "address": "G4pGvEEUWvAG4gXNhU1e7UtAWxjDPA135SQJwbjfisnP"
   }
 }

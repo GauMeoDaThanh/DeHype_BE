@@ -107,25 +107,46 @@ export class MarketService implements OnApplicationBootstrap {
       );
       const events = eventParser.parseLogs(transaction.meta.logMessages);
       for (let event of events) {
-        console.log(event);
         if (event.name === 'BetEvent') {
           this.handleBettingEvent(event.data);
+          break;
         } else if (event.name === 'CreateMarketEvent') {
           this.handleCreateMarketEvent(event.data);
+          break ;
+        } else if (event.name === 'MarketResolvedEvent') {
+          this.handleMarketResolvedEvent(event.data);
+          break;
         }
       }
     });
   }
+  private async handleMarketResolvedEvent(eventData: any) {
+    const marketAccount = await program.account.marketAccount.fetch(
+      eventData.marketPubkey.toString(),
+    );
+    const voters = (await program.account.bettingAccount.all())
+      .filter((voter) => voter.account.marketKey.eq(marketAccount.marketKey))
+      .map((voter) => voter.account.voter.toString());
+    const uniqueVoters = [...new Set(voters)];
+    // check if voter is in database. If not, remove it from list
+    const users = await this.userService.getUserByWalletAddress(uniqueVoters);
+    await this.notificationsService.createEndMarketNotifications(
+      users,
+      marketAccount.title.toString(),
+      eventData.answerName.toString(),
+    );
+    console.log('create notification for market resolved');
+  }
 
   private async handleCreateMarketEvent(eventData: any) {
-    console.log('Create market event data:', eventData);
-    this.createMarket({
+    await this.createMarket({
       marketPublicKey: eventData.marketPubkey.toString(),
       marketKey: eventData.marketKey.toString(16),
       coverUrl: eventData.coverUrl,
       title: eventData.title.toString(),
       categoryIds: [],
     });
+    console.log('Market created');
   }
 
   private async handleBettingEvent(eventData: BetEventData) {
@@ -1060,6 +1081,11 @@ export class MarketService implements OnApplicationBootstrap {
   }
 
   async marketSummary(marketSummaryDto: GetMarketSummaryDto) {
+    const data = await this.redisCacheService.get(
+      `${marketSummaryDto.title}/summary`,
+    );
+    if (data) return data;
+
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
 
     //create search keywords
