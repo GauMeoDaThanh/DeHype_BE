@@ -514,46 +514,6 @@
           "index": false
         },
         {
-          "name": "marketKey",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "title",
-          "type": "string",
-          "index": false
-        },
-        {
-          "name": "description",
-          "type": "string",
-          "index": false
-        },
-        {
-          "name": "coverUrl",
-          "type": "string",
-          "index": false
-        },
-        {
-          "name": "creatorFeePercentage",
-          "type": "u64",
-          "index": false
-        },
-        {
-          "name": "timestamp",
-          "type": "i64",
-          "index": false
-        }
-      ]
-    },
-    {
-      "name": "CreateMarketEvent",
-      "fields": [
-        {
-          "name": "creator",
-          "type": "publicKey",
-          "index": false
-        },
-        {
           "name": "marketPubkey",
           "type": "publicKey",
           "index": false

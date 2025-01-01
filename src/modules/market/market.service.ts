@@ -119,13 +119,13 @@ export class MarketService implements OnApplicationBootstrap {
 
   private async handleCreateMarketEvent(eventData: any) {
     console.log('Create market event data:', eventData);
-    // this.createMarket({
-    //   marketPublicKey: eventData.public.toString(),
-    //   marketKey: eventData.marketKey.toString(16),
-    //   coverUrl: eventData.coverUrl,
-    //   title: eventData.title.toString(),
-    //   categoryIds: [],
-    // });
+    this.createMarket({
+      marketPublicKey: eventData.marketPubkey.toString(),
+      marketKey: eventData.marketKey.toString(16),
+      coverUrl: eventData.coverUrl,
+      title: eventData.title.toString(),
+      categoryIds: [],
+    });
   }
 
   private async handleBettingEvent(eventData: BetEventData) {
@@ -147,7 +147,6 @@ export class MarketService implements OnApplicationBootstrap {
   async getMarkets() {
     try {
       // const { trending, category } = getMarketsDto;
-
       const marketInfo = await this.marketRepository.find();
       const responses =
         (await program.account.marketAccount.all()) as MarketResponse[];
