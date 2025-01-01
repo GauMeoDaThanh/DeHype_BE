@@ -102,7 +102,7 @@ export class MarketController {
     return this.marketService.createMarketTransaction(createMarketDto);
   }
 
-  @ApiBearerAuth()
+  // @ApiBearerAuth()
   @ApiOperation({ summary: 'upload cover of market' })
   @ApiBody({
     schema: {
@@ -120,8 +120,9 @@ export class MarketController {
     description: 'Successfull Operation',
     type: UploadImageReponseDto,
   })
-  @Roles(Role.ADMIN)
+  // @Roles(Role.ADMIN)
   @Post('upload')
+  @Public()
   @UseInterceptors(FileInterceptor('file'))
   uploadImage(
     @UploadedFile(new FileValidationPipe()) image: Express.Multer.File,
