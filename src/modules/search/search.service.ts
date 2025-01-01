@@ -34,7 +34,9 @@ export class SearchService {
     searchMarketqueryDto: SearchMarketQueryDto,
     wallet?: string,
   ) {
-    const { q, c, fav } = searchMarketqueryDto;
+    const { q, c, fav, active } = searchMarketqueryDto;
+    const isActive =
+      active === 'true' ? true : active === 'false' ? false : null;
     if (c) var categoryIds = c?.split(',').map((id) => parseInt(id));
     let finalMarketIds = [];
 
@@ -54,9 +56,9 @@ export class SearchService {
     }
 
     if (q || c || fav) {
-      return await this.marketService.getBatchMarkets(finalMarketIds);
+      return await this.marketService.getBatchMarkets(finalMarketIds, isActive);
     } else {
-      return await this.marketService.getMarkets();
+      return await this.marketService.getMarkets(isActive);
     }
   }
 }

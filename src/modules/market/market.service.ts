@@ -112,7 +112,7 @@ export class MarketService implements OnApplicationBootstrap {
           break;
         } else if (event.name === 'CreateMarketEvent') {
           this.handleCreateMarketEvent(event.data);
-          break ;
+          break;
         } else if (event.name === 'MarketResolvedEvent') {
           this.handleMarketResolvedEvent(event.data);
           break;
@@ -165,7 +165,7 @@ export class MarketService implements OnApplicationBootstrap {
     console.log('Market stats updated in Redis');
   }
 
-  async getMarkets() {
+  async getMarkets(isActive: boolean | null = null) {
     try {
       // const { trending, category } = getMarketsDto;
       const marketInfo = await this.marketRepository.find();
@@ -190,7 +190,6 @@ export class MarketService implements OnApplicationBootstrap {
           });
 
           const { startTime: _, ...restAccount } = account;
-
           return {
             publicKey,
             ...restAccount,
@@ -206,8 +205,13 @@ export class MarketService implements OnApplicationBootstrap {
         }),
       );
 
+      const filteredMarkets = marketsStats.filter((market) => {
+        if (isActive === null) return true; // Return all markets
+        return market.isActive == isActive; // Filter by isActive value
+      });
+
       // Return according to trending
-      return marketsStats.sort((a, b): number => {
+      return filteredMarkets.sort((a, b): number => {
         return (
           (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0) ||
           b.participants - a.participants ||
@@ -274,7 +278,7 @@ export class MarketService implements OnApplicationBootstrap {
     }
   }
 
-  async getBatchMarkets(publicKeys: string[]) {
+  async getBatchMarkets(publicKeys: string[], isActive: boolean | null = null) {
     const fetchMarketFromProgram =
       (await program.account.marketAccount.fetchMultiple(
         publicKeys,
@@ -324,7 +328,12 @@ export class MarketService implements OnApplicationBootstrap {
         };
       }),
     );
-    return batchMarketInfos;
+
+    const filteredMarkets = batchMarketInfos.filter((market) => {
+      if (isActive === null) return true; // Return all markets
+      return market.isActive == isActive; // Filter by isActive value
+    });
+    return filteredMarkets;
   }
 
   async getBatchMarketStats(marketIds: string[]) {

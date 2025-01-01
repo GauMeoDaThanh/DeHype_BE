@@ -13,4 +13,8 @@ export class SearchMarketQueryDto {
   @IsOptional()
   @ApiProperty({ description: 'Search in favourite only', required: false })
   fav: boolean;
+
+  @IsOptional()
+  @ApiProperty({ description: 'is active or not', required: false })
+  active?: string;
 }
