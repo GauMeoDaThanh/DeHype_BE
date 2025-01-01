@@ -1016,7 +1016,6 @@ export class MarketService implements OnApplicationBootstrap {
         marketPubKey,
         true,
       );
-
       return new Observable((subscriber) => {
         subscriber.next({
           data: {
