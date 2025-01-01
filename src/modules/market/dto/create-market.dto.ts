@@ -78,6 +78,16 @@ export class ResolveMarketDto {
 //   trending: boolean;
 // }
 
+export class GetMarketSummaryDto {
+  @ApiProperty({ description: 'title of market' })
+  @IsNotEmpty()
+  title: string;
+
+  @ApiProperty({ description: 'description of market' })
+  @IsNotEmpty()
+  description: string;
+}
+
 export class GetVoterHistoryQueryDto {
   @ApiProperty({ description: 'The min amount of bet', required: false })
   @IsOptional()

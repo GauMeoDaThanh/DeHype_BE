@@ -20,6 +20,7 @@ import {
   CreateMarketDto,
   GetVoterHistoryQueryDto,
   ResolveMarketDto,
+  GetMarketSummaryDto,
 } from './dto/create-market.dto';
 import { Public } from 'src/decorators/public-route';
 import {
@@ -258,5 +259,13 @@ export class MarketController {
     @Body() resolveMarketDto: ResolveMarketDto,
   ) {
     return this.marketService.resolveMarket(marketPublicKey, resolveMarketDto);
+  }
+
+  @ApiOperation({ summary: 'get market summary' })
+  @ApiOkResponse({ type: String })
+  @Public()
+  @Post('/summary')
+  getMarketSummary(@Body() getMarketSummary: GetMarketSummaryDto) {
+    return this.marketService.marketSummary(getMarketSummary);
   }
 }

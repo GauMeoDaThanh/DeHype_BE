@@ -554,6 +554,11 @@
           "index": false
         },
         {
+          "name": "marketPubkey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
           "name": "marketKey",
           "type": "u64",
           "index": false
@@ -686,6 +691,11 @@
       "code": 6018,
       "name": "InvalidPercent",
       "msg": "Invalid percent"
+    },
+    {
+      "code": 6019,
+      "name": "InvalidEndTime",
+      "msg": "End time must be after current time"
     }
   ],
   "metadata": {

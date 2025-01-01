@@ -19,6 +19,7 @@ import {
   CreateMarketDto,
   GetVoterHistoryQueryDto,
   ResolveMarketDto,
+  GetMarketSummaryDto,
 } from './dto/create-market.dto';
 import {
   AnswerAccount,
@@ -43,6 +44,9 @@ import { getSolPriceInUSD } from 'src/helpers/utils';
 import { UpdateMarketCategoryDto } from './dto/update-market.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { BorshCoder } from '@project-serum/anchor';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import textVersion from 'textversionjs';
+import axios from 'axios';
 
 interface BetEventData {
   voter: PublicKey;
@@ -1054,6 +1058,69 @@ export class MarketService implements OnApplicationBootstrap {
       console.error('Error in get market live update:', error);
       throw new InternalServerErrorException('Error in get market live update');
     }
+  }
+
+  async marketSummary(marketSummaryDto: GetMarketSummaryDto) {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+
+    //create search keywords
+    const currentDate = `${
+      new Date().getMonth() + 1
+    }/${new Date().getFullYear()}`;
+    const { title, description } = marketSummaryDto;
+    const n = 3;
+    const userPrompt = `I'm writing a research report on ${title} and its description: ${description} and need help coming up with diverse search queries.
+    Please generate a list of ${n} search queries that would be useful for writing a research report on ${title}. These queries can be in various formats, from simple keywords to more complex phrases. Do not add any formatting or numbering to the queries. If the topic refers to time, right now is ${currentDate}. If talking about the future, it is 2025 and beyond.`;
+
+    let model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      systemInstruction:
+        'The user will ask you to help generate some search queries. Respond with only the suggested queries in plain text with no extra formatting, each on its own line.',
+    });
+    const result = (await model.generateContent(userPrompt)).response
+      .text()
+      .split('\n')
+      .filter((s) => s.trim().length > 0)
+      .slice(0, n);
+
+    // searching
+    const headers = {
+      'X-API-Key': process.env.YOU_AI_SEARCH_API,
+    };
+
+    const results: any[] = [];
+    for (const query of result) {
+      const url = `https://api.ydc-index.io/search?query=${query}`;
+      const response = await axios.get(url, {
+        headers,
+      });
+      results.push(await response.data);
+      break;
+    }
+
+    results.map((result) => result.hits.map((hit: any) => hit.snippets));
+
+    //synthesizing content
+    const contentSlice = 750;
+    const inputData = result
+      .map((result) => result.slice(0, contentSlice))
+      .join(',');
+    const generationConfig = {
+      temperature: 1,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+      responseMimeType: 'text/plain',
+    };
+    model = genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+    });
+    const chatSession = model.startChat({ generationConfig, history: [] });
+    const summary = await chatSession.sendMessage(
+      `Input data: ${inputData} write a short paragraph summary of the research report about ${title} based on the provided information. Just short paragraph! about 8-10 sentences long. No need to say "based on the provided information". Don't give your opinion, just summarize the information.`,
+    );
+
+    return summary.response.text().replace(/\. {2,}/g, '. ');
   }
 
   async getUserBettingHistory(walletAddress: string) {
