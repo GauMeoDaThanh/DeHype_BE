@@ -226,7 +226,7 @@ export class UserService {
       '6KeDU6w3xK1K1WLraa3eEf7adgGTCgyALjuA2V1dSEx',
     );
 
-    return profitLoss;
+    return 0;
   }
 
   async findOne(walletAddress: string) {
