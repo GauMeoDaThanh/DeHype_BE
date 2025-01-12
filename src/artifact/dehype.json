@@ -192,7 +192,10 @@
           "name": "config",
           "isMut": false,
           "isSigner": false,
-          "relations": ["owner", "service_fee_account"]
+          "relations": [
+            "owner",
+            "service_fee_account"
+          ]
         },
         {
           "name": "marketAccount",
@@ -591,6 +594,41 @@
         {
           "name": "answerName",
           "type": "string",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "RewardClaimedEvent",
+      "fields": [
+        {
+          "name": "marketKey",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marketPubkey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "voterPubkey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
+          "name": "voterReward",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "totalTokensWinnersBet",
+          "type": "u64",
+          "index": false
+        },
+        {
+          "name": "voterPercent",
+          "type": "u64",
           "index": false
         }
       ]

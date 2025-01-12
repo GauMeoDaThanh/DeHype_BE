@@ -104,6 +104,7 @@ export class MarketService implements OnApplicationBootstrap {
       );
       const events = eventParser.parseLogs(transaction.meta.logMessages);
       for (let event of events) {
+        console.log(event);
         if (event.name === 'BetEvent') {
           this.handleBettingEvent(event.data);
           break;
@@ -113,10 +114,31 @@ export class MarketService implements OnApplicationBootstrap {
         } else if (event.name === 'MarketResolvedEvent') {
           this.handleMarketResolvedEvent(event.data);
           break;
+        } else if (event.name === 'RewardClaimedEvent') {
+          this.handleRewardClaimedEvent(event.data);
+          break;
         }
       }
     });
   }
+  private async handleRewardClaimedEvent(eventData: any) {
+    const existingValue = (await this.redisCacheService.get(
+      `${eventData.marketPubkey.toString()}/rewardClaimed`,
+    )) as string[];
+    let updatedValue = [];
+    if (existingValue) {
+      updatedValue = [...existingValue, eventData.voterPubkey.toString()];
+    } else {
+      updatedValue = [eventData.voterPubkey.toString()];
+    }
+    await this.redisCacheService.set(
+      `${eventData.marketPubkey.toString()}/rewardClaimed`,
+      updatedValue,
+      { ttl: 0 } as any,
+    );
+    console.log('Update reward claimed event');
+  }
+
   private async handleMarketResolvedEvent(eventData: any) {
     const marketAccount = await program.account.marketAccount.fetch(
       eventData.marketPubkey.toString(),
@@ -1326,6 +1348,16 @@ export class MarketService implements OnApplicationBootstrap {
 
   public async getVoterReward(getVoterRewardDto: GetVoterRewardDto) {
     const { marketPublicKey, walletAddress } = getVoterRewardDto;
+    const isClaimed = (await this.redisCacheService.get(
+      `${walletAddress}/rewardClaimed`,
+    )) as string[];
+
+    if (isClaimed && isClaimed.includes(walletAddress)) {
+      return {
+        claimed: true,
+      };
+    }
+
     const voters = await program.account.bettingAccount.all();
 
     const marketAccount =
