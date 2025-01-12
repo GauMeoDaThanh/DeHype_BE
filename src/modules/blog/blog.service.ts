@@ -32,8 +32,8 @@ export class BlogService {
       relations: ['user'],
     });
     if (!blog) throw new NotFoundException(`Can't find a blog with id ${id}`);
-    if (blog.user.walletAddress !== walletAddress)
-      throw new ForbiddenException("You're not the author");
+    // if (blog.user.walletAddress !== walletAddress)
+    //   throw new ForbiddenException("You're not the author");
     return blog;
   }
 

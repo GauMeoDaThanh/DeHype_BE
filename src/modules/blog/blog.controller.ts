@@ -115,7 +115,7 @@ export class BlogController {
   @ApiOperation({ summary: 'update blog info and content' })
   @ApiOkResponse({ type: UpdateBlogResponseDto })
   @ApiNotFoundResponse({ description: "Can't find blog" })
-  @ApiForbiddenResponse({ description: 'Only author can update blog' })
+  // @ApiForbiddenResponse({ description: 'Only author can update blog' })
   @Roles(Role.ADMIN)
   @Patch(':id')
   update(
